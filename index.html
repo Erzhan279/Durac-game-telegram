@@ -3,140 +3,218 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Durak Mobile</title>
+    <title>Durak vs Bot</title>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <style>
         body {
-            background-color: #2c3e50;
+            background-color: #2e7d32;
             color: white;
             font-family: sans-serif;
-            text-align: center;
-            height: 100vh;
             margin: 0;
-            overflow: hidden;
+            height: 100vh;
             display: flex;
             flex-direction: column;
-        }
-        
-        /* ҮСТЕЛ */
-        #game-board {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-wrap: wrap; /* Карталар сыймаса астына түседі */
-            gap: 10px;
-            border-bottom: 2px solid rgba(255,255,255,0.1);
+            overflow: hidden;
         }
 
-        /* ҚОЛДАҒЫ КАРТАЛАР */
-        #my-hand {
-            height: 120px;
+        /* БОТ АЙМАҒЫ (Жоғары) */
+        #bot-area {
+            height: 100px;
             display: flex;
             justify-content: center;
             align-items: center;
             background: rgba(0,0,0,0.2);
-            padding-bottom: 10px;
+            position: relative;
+        }
+        
+        /* КОЗЫРЬ ЖӘНЕ КОЛОДА */
+        #deck-area {
+            position: absolute;
+            left: 10px;
+            top: 10px;
+            display: flex;
+            align-items: center;
         }
 
+        /* ҮСТЕЛ (Орта) */
+        #table-area {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        /* МЕНІҢ АЙМАҒЫМ (Төмен) */
+        #my-area {
+            height: 160px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding-bottom: 10px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.5));
+        }
+
+        .controls { display: flex; gap: 10px; margin-bottom: 10px; }
+        
+        button {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 15px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-take { background: #f1c40f; }
+        .btn-bita { background: #e74c3c; color: white; }
+        .btn-new { background: #3498db; color: white; }
+
+        /* КАРТА СТИЛІ */
         .card {
             width: 60px;
             height: 90px;
             background: white;
-            color: black;
-            border-radius: 6px;
+            border-radius: 5px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             padding: 4px;
-            box-shadow: -2px 2px 5px rgba(0,0,0,0.5);
+            box-shadow: 1px 1px 4px rgba(0,0,0,0.5);
             font-weight: bold;
             font-size: 14px;
-            cursor: pointer;
-            margin: 0 -10px;
-            transition: 0.2s;
             position: relative;
         }
-
-        /* Үстелде жатқан карталар түзу тұрады */
-        #game-board .card {
-            margin: 0;
-            transform: none !important;
-            cursor: default;
+        .card.red { color: red; }
+        .card.black { color: black; }
+        
+        /* Картаның арқасы */
+        .card-back {
+            background: repeating-linear-gradient(45deg, #c0392b, #c0392b 10px, #e74c3c 10px, #e74c3c 20px);
+            border: 2px solid white;
         }
 
-        .card:hover { transform: translateY(-20px); z-index: 10; }
-        .red { color: red; }
-        .black { color: black; }
-        .suit-center { font-size: 24px; align-self: center; }
+        /* Козырь картасы (жатық тұрады) */
+        .trump-card {
+            transform: rotate(90deg);
+            margin-left: -20px;
+            z-index: 0;
+        }
+        .deck-stack {
+            z-index: 1;
+        }
 
-        #clear-btn {
+        #message-box {
             position: absolute;
-            top: 10px;
-            right: 10px;
-            padding: 8px 15px;
-            background: #e74c3c;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.7);
+            padding: 10px 20px;
+            border-radius: 10px;
+            display: none;
+            pointer-events: none;
         }
     </style>
 </head>
 <body>
 
-    <button id="clear-btn" onclick="clearTable()">Үстелді тазалау</button>
-    
-    <div id="game-board"></div>
+    <div id="bot-area">
+        <div id="deck-area">
+            <div id="trump-placeholder"></div> <div class="card card-back deck-stack" id="deck-count">36</div>
+        </div>
+        <div id="bot-hand" style="display:flex;"></div>
+    </div>
 
-    <div id="my-hand"></div>
+    <div id="message-box">Хабарлама</div>
+
+    <div id="table-area"></div>
+
+    <div id="my-area">
+        <div class="controls">
+            <button class="btn-take" onclick="socket.emit('actionTake')">АЛУ</button>
+            <button class="btn-bita" onclick="socket.emit('actionBita')">БИТА 🗑️</button>
+            <button class="btn-new" onclick="socket.emit('restart')">🔄</button>
+        </div>
+        <div id="my-hand" style="display:flex; justify-content:center;"></div>
+    </div>
 
     <script>
         const socket = io();
-        const handDiv = document.getElementById('my-hand');
-        const boardDiv = document.getElementById('game-board');
+        
+        // HTML элементтер
+        const myHandDiv = document.getElementById('my-hand');
+        const botHandDiv = document.getElementById('bot-hand');
+        const tableDiv = document.getElementById('table-area');
+        const trumpDiv = document.getElementById('trump-placeholder');
+        const deckCountDiv = document.getElementById('deck-count');
+        const msgBox = document.getElementById('message-box');
 
-        // Көмекші функция: Картаның HTML-ін жасау
-        function createCardElement(card, isPlayable = false) {
-            const cardEl = document.createElement('div');
-            const isRed = (card.suit === '♥' || card.suit === '♦') ? 'red' : 'black';
-            cardEl.className = `card ${isRed}`;
-            cardEl.innerHTML = `
-                <div class="top-val">${card.value}${card.suit}</div>
-                <div class="suit-center">${card.suit}</div>
-                <div class="bot-val" style="transform: rotate(180deg);">${card.value}${card.suit}</div>
-            `;
-            
-            // Егер бұл менің қолымдағы карта болса, оны басуға болады
-            if (isPlayable) {
-                cardEl.onclick = () => {
-                    socket.emit('playCard', card); // Серверге жібереміз
-                    cardEl.remove(); // Қолдан өшіреміз
-                };
+        function createCard(card, isFaceUp, onClick = null) {
+            const el = document.createElement('div');
+            if (!isFaceUp) {
+                el.className = 'card card-back';
+                el.style.margin = '0 -20px';
+                return el;
             }
-            return cardEl;
+            const isRed = (card.suit === '♥' || card.suit === '♦') ? 'red' : 'black';
+            el.className = `card ${isRed}`;
+            if (onClick) {
+                el.style.cursor = 'pointer';
+                el.onclick = onClick;
+                el.style.margin = '0 -10px';
+                el.onmouseover = () => el.style.transform = 'translateY(-15px)';
+                el.onmouseout = () => el.style.transform = 'translateY(0)';
+            } else {
+                el.style.margin = '0 5px'; // Үстелдегі карта
+            }
+
+            el.innerHTML = `
+                <div>${card.value}</div>
+                <div style="font-size:20px; text-align:center">${card.suit}</div>
+                <div style="transform: rotate(180deg); text-align:right">${card.value}</div>
+            `;
+            return el;
         }
 
-        // 1. Карта таратылды
-        socket.on('dealCards', (cards) => {
-            handDiv.innerHTML = '';
-            cards.forEach(card => {
-                handDiv.appendChild(createCardElement(card, true));
+        socket.on('updateState', (state) => {
+            // 1. Менің қолым
+            myHandDiv.innerHTML = '';
+            state.playerHand.forEach((card, index) => {
+                myHandDiv.appendChild(createCard(card, true, () => {
+                    socket.emit('playCard', index);
+                }));
             });
+
+            // 2. Боттың қолы (тек саны)
+            botHandDiv.innerHTML = '';
+            for(let i=0; i<state.botCardCount; i++) {
+                botHandDiv.appendChild(createCard(null, false));
+            }
+
+            // 3. Үстел
+            tableDiv.innerHTML = '';
+            state.table.forEach(card => {
+                tableDiv.appendChild(createCard(card, true));
+            });
+
+            // 4. Козырь және Колода
+            trumpDiv.innerHTML = '';
+            if (state.trumpCard) {
+                const tCard = createCard(state.trumpCard, true);
+                tCard.classList.add('trump-card');
+                trumpDiv.appendChild(tCard);
+            }
+            deckCountDiv.innerText = state.deckCount;
+            if(state.deckCount === 0) deckCountDiv.style.opacity = 0;
         });
 
-        // 2. Үстел жаңарды (Біреу карта тастады)
-        socket.on('updateTable', (tableCards) => {
-            boardDiv.innerHTML = ''; // Үстелді тазалап, қайта саламыз
-            tableCards.forEach(card => {
-                boardDiv.appendChild(createCardElement(card, false));
-            });
+        socket.on('message', (text) => {
+            msgBox.innerText = text;
+            msgBox.style.display = 'block';
+            setTimeout(() => msgBox.style.display = 'none', 1500);
         });
 
-        function clearTable() {
-            socket.emit('clearTable');
-        }
     </script>
-
 </body>
 </html>
