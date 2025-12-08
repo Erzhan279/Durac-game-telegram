@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Durak Super Fast</title>
+    <title>Durak Realistic</title>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <style>
         body {
-            background: radial-gradient(circle at center, #1b5e20 0%, #000000 100%);
+            /* Казино үстелі (Жасыл шұға) */
+            background: radial-gradient(circle at center, #1b5e20 0%, #05140a 100%);
             color: white;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             margin: 0;
             height: 100vh;
             display: flex;
@@ -17,16 +18,32 @@
             overflow: hidden;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
-            /* Телефонда жылдам жұмыс істеу үшін */
-            touch-action: manipulation; 
         }
 
-        /* АЙМАҚТАР */
         #bot-area { height: 130px; display: flex; justify-content: center; align-items: center; position: relative; z-index: 1;}
-        #table-area { flex: 1; display: flex; justify-content: center; align-items: center; perspective: 1000px; z-index: 2;}
         
+        /* ҮСТЕЛ АЙМАҒЫ */
+        #table-area { 
+            flex: 1; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            perspective: 1000px; 
+            z-index: 5;
+            flex-wrap: wrap; /* Карталар сыймаса астына түседі */
+            align-content: center;
+        }
+        
+        /* КАРТА ЖҰБЫ (Осының ішінде екі карта тұрады) */
+        .card-pair {
+            position: relative;
+            width: 90px;
+            height: 130px;
+            margin: 10px; /* Жұптардың арасы */
+        }
+
         #my-area { 
-            height: 240px; 
+            height: 250px; 
             display: flex; 
             flex-direction: column; 
             justify-content: flex-end; 
@@ -37,12 +54,12 @@
         }
         #my-hand { position: relative; width: 100%; height: 160px; display: flex; justify-content: center; align-items: flex-end; }
 
-        /* --- КАРТА ДИЗАЙНЫ (Оптимизация) --- */
+        /* --- КАРТА СТИЛІ --- */
         .card {
-            width: 86px;
-            height: 126px;
+            width: 90px;
+            height: 130px;
             background: #fff;
-            border-radius: 8px;
+            border-radius: 9px;
             position: absolute;
             display: flex;
             flex-direction: column;
@@ -50,74 +67,68 @@
             padding: 5px;
             box-sizing: border-box;
             border: 1px solid #ccc;
-            
-            /* 🔥 GPU КҮШЕЙТКІШ (Hardware Acceleration) 🔥 */
-            transform: translate3d(0,0,0); 
-            will-change: transform; /* Браузерге ескерту: "Қазір қимылдайды" */
-            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); /* Өте жұмсақ анимация */
-            
-            /* Көлеңке жеңіл болуы керек */
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3); 
+            /* Жұмсақ анимация */
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
         }
 
         .red { color: #d32f2f; }
         .black { color: #212121; }
-
-        .val-top { font-size: 18px; font-weight: 700; line-height: 1; text-align: left; }
-        .suit-big { font-size: 44px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
-        .val-bot { font-size: 18px; font-weight: 700; line-height: 1; text-align: left; transform: rotate(180deg); }
+        .val-top { font-size: 19px; font-weight: 800; line-height: 1; text-align: left; }
+        .suit-big { font-size: 46px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        .val-bot { font-size: 19px; font-weight: 800; line-height: 1; text-align: left; transform: rotate(180deg); }
 
         .card-back {
-            background: repeating-linear-gradient(45deg, #b71c1c, #b71c1c 10px, #880e4f 10px, #880e4f 20px);
-            border: 2px solid #fff;
+            background: repeating-linear-gradient(135deg, #b71c1c, #b71c1c 10px, #880e4f 10px, #880e4f 20px);
+            border: 3px solid #fff;
         }
         .card-back * { display: none; }
 
-        /* Үстелдегі карта */
-        .table-card { 
-            /* translate3d маңызды - ол телефонды қаттырмайды */
-            transform: translate3d(0, 0, 0) scale(1) !important; 
-            margin: 0 5px; 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5); 
+        /* --- ЕРЕКШЕ ЭФФЕКТІЛЕР --- */
+
+        /* 1. ШАБУЫЛ КАРТАСЫ (Астында) */
+        .card-attack {
+            z-index: 1;
+            transform: translate3d(0, 0, 0); /* Түзу тұрады */
         }
 
-        /* Қолдағы карта */
-        .my-card:hover { 
+        /* 2. ҚОРҒАНЫС КАРТАСЫ (Үстінде, қиғаш) */
+        .card-defend {
+            z-index: 5;
+            /* Сәл оңға (25px), сәл төмен (10px) және бұрылу (15deg) */
+            transform: translate3d(25px, 10px, 0) rotate(15deg);
+            box-shadow: 2px 5px 15px rgba(0,0,0,0.6); /* Көлеңкесі қанық */
+        }
+
+        /* Менің қолымдағы карта */
+        .my-card {
+            transition: transform 0.3s ease;
+        }
+        .my-card:hover, .my-card:active { 
             z-index: 100 !important; 
-            /* Hover кезінде де GPU қолданамыз */
-            transform: translate3d(0, -40px, 0) scale(1.1) rotate(0deg) !important; 
-            box-shadow: 0 0 15px gold;
+            transform: translate3d(0, -50px, 20px) scale(1.15) !important; 
+            box-shadow: 0 0 25px gold;
+            cursor: pointer;
         }
 
-        /* --- БАТЫРМАЛАР --- */
-        .controls { z-index: 1000; margin-bottom: 25px; display: flex; gap: 12px; }
-        .btn { 
-            padding: 12px 25px; 
-            border-radius: 25px; 
-            border: none; 
-            font-weight: 800; 
-            text-transform: uppercase; 
-            font-size: 14px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            /* Басу реакциясы жылдам болу үшін */
-            touch-action: manipulation;
+        /* АНИМАЦИЯ: Ұшып түсу */
+        @keyframes slam {
+            from { transform: translate3d(0, -100px, 50px) scale(1.5); opacity: 0; }
+            to { opacity: 1; }
         }
-        .btn:active { transform: scale(0.95); opacity: 0.8; }
-        
-        .btn-take { background: #ffca28; color: #3e2723; }
-        .btn-bita { background: #e53935; color: white; }
-        .btn-restart { background: #42a5f5; color: white; padding: 12px 15px; }
+        .animate-slam { animation: slam 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
 
-        /* Хабарлама */
-        #status-bar {
-            position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.85); color: #fff; padding: 12px 24px; border-radius: 30px;
-            font-size: 18px; font-weight: bold; display: none; pointer-events: none;
-            backdrop-filter: blur(4px); box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 999;
-        }
+        /* Батырмалар */
+        .controls { z-index: 1000; margin-bottom: 25px; display: flex; gap: 15px; }
+        .btn { padding: 12px 30px; border-radius: 30px; border: none; font-weight: 800; cursor: pointer; text-transform: uppercase; box-shadow: 0 5px 10px rgba(0,0,0,0.4); transition: 0.1s;}
+        .btn:active { transform: scale(0.95); }
+        .btn-take { background: linear-gradient(#ffca28, #ff6f00); color: #3e2723; }
+        .btn-bita { background: linear-gradient(#e53935, #b71c1c); color: white; }
+        .btn-restart { background: #42a5f5; color: white; padding: 12px 18px; border-radius: 50%;}
 
-        #deck-count { position: absolute; left: 15px; font-size: 20px; color: white; text-shadow: 1px 1px 2px black; z-index: 2; display: flex; justify-content: center; align-items: center;}
+        #deck-count { position: absolute; left: 15px; font-size: 22px; color: white; text-shadow: 1px 1px 2px black; z-index: 2; display: flex; justify-content: center; align-items: center;}
         #trump-placeholder { position: absolute; left: 30px; z-index: 0; filter: brightness(0.7); }
+        #status-bar { position: absolute; top: 45%; background: rgba(0,0,0,0.8); color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; display: none; pointer-events: none; z-index: 100;}
 
     </style>
 </head>
@@ -150,7 +161,17 @@
         const statusDiv = document.getElementById('status-bar');
         const deckCountDiv = document.getElementById('deck-count');
 
-        function createCard(card, isFaceUp, index, total, isHand) {
+        function createCardHTML(card) {
+            const isRed = (card.suit === '♥' || card.suit === '♦');
+            const colorClass = isRed ? 'red' : 'black';
+            return `
+                <div class="val-top ${colorClass}">${card.value}<br>${card.suit}</div>
+                <div class="suit-big ${colorClass}">${card.suit}</div>
+                <div class="val-bot ${colorClass}">${card.value}<br>${card.suit}</div>
+            `;
+        }
+
+        function createCardElement(card, isFaceUp, index, total, isHand) {
             const el = document.createElement('div');
             el.className = 'card';
 
@@ -158,17 +179,10 @@
                 el.classList.add('card-back');
                 if(!isHand) {
                     el.style.margin = '0 -35px';
-                    // translate3d қолданамыз (GPU)
                     el.style.transform = `translate3d(0, ${-index*2}px, 0)`;
                 }
             } else {
-                const isRed = (card.suit === '♥' || card.suit === '♦');
-                el.classList.add(isRed ? 'red' : 'black');
-                el.innerHTML = `
-                    <div class="val-top">${card.value}<br>${card.suit}</div>
-                    <div class="suit-big">${card.suit}</div>
-                    <div class="val-bot">${card.value}<br>${card.suit}</div>
-                `;
+                el.innerHTML = createCardHTML(card);
             }
 
             if (isHand && isFaceUp) {
@@ -177,42 +191,58 @@
                 const angle = (index - center) * 5;
                 const yOffset = Math.abs(index - center) * 8;
                 const xOffset = (index - center) * 45;
-                
-                // 🔥 ЕҢ МАҢЫЗДЫ: translate3d қолдану 🔥
-                // Бұл телефонды "қыздырмай" жұмыс істетеді
                 el.style.transform = `translate3d(${xOffset}px, ${yOffset}px, 0) rotate(${angle}deg)`;
-                
                 el.style.zIndex = index;
                 el.onclick = () => socket.emit('playCard', index);
-            } else if (!isHand && isFaceUp) {
-                el.classList.add('table-card');
             }
             return el;
-        }
-
-        function showMsg(text) {
-            statusDiv.innerText = text;
-            statusDiv.style.display = 'block';
-            setTimeout(() => statusDiv.style.display = 'none', 1500);
         }
 
         socket.on('updateState', (state) => {
             if(state.winner) showMsg(state.winner === 'player' ? "🏆 ЖЕҢІС!" : "💀 ЖЕҢІЛІС...");
             else if(state.attacker === 'player') showMsg("⚔️ СЕНІҢ ЖҮРІСІҢ");
 
-            // DOM-ды толық тазалау - ауыр операция, бірақ кішкентай ойын үшін жарайды
+            // 1. МЕНІҢ ҚОЛЫМ
             myHandDiv.innerHTML = '';
-            state.playerHand.forEach((c, i) => myHandDiv.appendChild(createCard(c, true, i, state.playerHand.length, true)));
+            state.playerHand.forEach((c, i) => myHandDiv.appendChild(createCardElement(c, true, i, state.playerHand.length, true)));
 
+            // 2. БОТТЫҢ ҚОЛЫ
             botHandDiv.innerHTML = '';
-            for(let i=0; i<state.botCardCount; i++) botHandDiv.appendChild(createCard(null, false, i));
+            for(let i=0; i<state.botCardCount; i++) botHandDiv.appendChild(createCardElement(null, false, i));
 
+            // 3. ҮСТЕЛ (ЕҢ МАҢЫЗДЫ ЖЕР: ЖҰПТАУ) 🔥
             tableDiv.innerHTML = '';
-            state.table.forEach(t => tableDiv.appendChild(createCard(t.card, true)));
+            
+            // Карталарды жұп-жұбымен шығарамыз (Шабуыл + Қорғаныс)
+            for (let i = 0; i < state.table.length; i += 2) {
+                // Контейнер (Жұп)
+                const pairDiv = document.createElement('div');
+                pairDiv.className = 'card-pair';
 
+                // Шабуыл картасы (Астында)
+                const attackCard = state.table[i].card;
+                const attackEl = createCardElement(attackCard, true, 0, 0, false);
+                attackEl.classList.add('card-attack'); // Түзу тұрады
+                attackEl.classList.add('animate-slam'); // Ұшып түседі
+                pairDiv.appendChild(attackEl);
+
+                // Қорғаныс картасы (Егер бар болса)
+                if (state.table[i+1]) {
+                    const defendCard = state.table[i+1].card;
+                    const defendEl = createCardElement(defendCard, true, 0, 0, false);
+                    defendEl.classList.add('card-defend'); // Қиғаш тұрады
+                    defendEl.classList.add('animate-slam');
+                    // Қорғаныс картасы шабуыл картасының ішіне емес, жанына (контейнерге) түседі
+                    pairDiv.appendChild(defendEl);
+                }
+
+                tableDiv.appendChild(pairDiv);
+            }
+
+            // 4. КОЗЫРЬ
             trumpDiv.innerHTML = '';
             if (state.trumpCard) {
-                const tCard = createCard(state.trumpCard, true);
+                const tCard = createCardElement(state.trumpCard, true, 0,0,false);
                 tCard.style.transform = 'rotate(90deg) translate3d(30px, 0, 0)';
                 tCard.style.zIndex = -1;
                 trumpDiv.appendChild(tCard);
@@ -221,7 +251,11 @@
             deckCountDiv.style.opacity = state.deckCount > 0 ? 1 : 0;
         });
 
-        socket.on('message', msg => showMsg(msg));
+        function showMsg(text) {
+            statusDiv.innerText = text;
+            statusDiv.style.display = 'block';
+            setTimeout(() => statusDiv.style.display = 'none', 1500);
+        }
     </script>
 </body>
 </html>
