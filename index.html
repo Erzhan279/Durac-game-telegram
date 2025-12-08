@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Durak Final CSS</title>
+    <title>Durak Pro Animation</title>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <style>
         body {
-            /* Әдемі жасыл градиент (Үстел) */
+            /* Әдемі жасыл градиент */
             background: radial-gradient(circle at 50% 30%, #1e6028 0%, #0a2910 100%);
             color: white;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -17,359 +17,403 @@
             flex-direction: column;
             overflow: hidden;
             user-select: none;
-            -webkit-tap-highlight-color: transparent;
-            /* Сүйрегенде экран қозғалмауы үшін өте маңызды */
             touch-action: none;
         }
 
         /* --- АЙМАҚТАР --- */
-        #bot-area { height: 130px; display: flex; justify-content: center; align-items: center; position: relative; z-index: 1;}
-        
+        #bot-area { height: 120px; position: relative; z-index: 1; width: 100%;}
         #table-area { 
             flex: 1; 
+            position: relative; 
+            z-index: 5; 
             display: flex; 
             justify-content: center; 
-            align-items: center; 
-            perspective: 1000px; 
-            position: relative;
-            z-index: 5;
-        }
-        
-        #drop-zone {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-        }
-        
-        #cards-on-table {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
             align-items: center;
-            pointer-events: none; 
-            width: 100%;
-            height: 100%;
         }
-
+        
         #my-area { 
             height: 280px; 
             display: flex; 
             flex-direction: column; 
             justify-content: flex-end; 
             align-items: center; 
-            padding-bottom: 20px; 
-            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); 
+            padding-bottom: 10px; 
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); 
             z-index: 20;
+            position: relative;
         }
+        
+        /* Менің қолым - енді карталар absolute емес, осы контейнер ішінде басқарылады */
         #my-hand { 
             position: relative; 
             width: 100%; 
-            height: 180px; 
-            display: flex; 
-            justify-content: center; 
-            align-items: flex-end; 
+            height: 100%; 
         }
 
-        /* --- КАРТА ДИЗАЙНЫ (ТАЗА CSS - СУРЕТСІЗ) --- */
+        /* --- КАРТА ДИЗАЙНЫ --- */
         .card {
             width: 90px;
             height: 135px;
             background: #fff;
             border-radius: 10px;
-            position: absolute;
+            position: absolute; /* Барлық карта absolute болады */
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             padding: 6px;
             box-sizing: border-box;
-            border: 1px solid #ccc;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+            border: 1px solid #999;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
             
-            /* Жұмсақ анимация (орнына қайту үшін) */
-            transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
-            will-change: transform;
+            /* МАҢЫЗДЫ: Барлық қозғалысқа анимация қосу */
+            transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), top 0.4s, left 0.4s, opacity 0.3s;
+            will-change: transform, top, left;
+            z-index: 10;
         }
 
-        /* Ішіндегі жазулар мен белгілер */
+        /* Үстелдегі карталар кішірек болуы керек */
+        .card.on-table {
+            transform: scale(0.75) !important; /* Дәу карталарды кішірейтеді */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        /* Карта іші */
         .red { color: #d32f2f; }
         .black { color: #212121; }
-        
-        .val-top { font-size: 20px; font-weight: 800; line-height: 1; text-align: left; letter-spacing: -1px; }
-        .suit-big { font-size: 50px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 1; }
-        .val-bot { font-size: 20px; font-weight: 800; line-height: 1; text-align: left; transform: rotate(180deg); letter-spacing: -1px; }
+        .val-top { font-size: 20px; font-weight: 800; line-height: 1; }
+        .suit-big { font-size: 50px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        .val-bot { font-size: 20px; font-weight: 800; line-height: 1; transform: rotate(180deg); }
 
-        /* Картаның АРҚАСЫ (Pattern) */
         .card-back {
             background: repeating-linear-gradient(135deg, #b71c1c, #b71c1c 10px, #880e4f 10px, #880e4f 20px);
-            border: 3px solid #fff;
+            border: 2px solid #fff;
         }
-        .card-back * { display: none; } 
+        .card-back * { display: none; }
 
-        /* --- СҮЙРЕУ ЭФФЕКТІЛЕРІ --- */
-        
-        /* Сүйреп бара жатқанда */
+        /* Сүйреу кезінде */
         .card.dragging {
-            transition: none !important; /* Қолға жабысып тұру үшін анимацияны өшіреміз */
+            transition: none !important; /* Сүйрегенде кешігу болмау керек */
             z-index: 9999 !important;
+            transform: scale(1.1) !important;
             box-shadow: 0 20px 50px rgba(0,0,0,0.6);
-            transform: scale(1.2) !important; /* Үлкейеді */
         }
-
-        /* Жай басқанда */
-        .card.active {
-            z-index: 100 !important;
-            margin-bottom: 40px !important; 
-            box-shadow: 0 0 25px gold;
-            border: 2px solid gold;
-        }
-
-        /* Үстелдегі жұптар (Шабуыл және Қорғаныс) */
-        .table-pair { position: relative; width: 90px; height: 130px; margin: 10px 15px; }
-        .card-attack { position: absolute !important; transform: rotate(-3deg) !important; z-index: 1; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-        .card-defend { position: absolute !important; z-index: 5; transform: translate3d(25px, 15px, 0) rotate(15deg) !important; box-shadow: 2px 8px 20px rgba(0,0,0,0.5); }
 
         /* Батырмалар */
-        .controls { z-index: 1000; margin-bottom: 25px; display: flex; gap: 15px; }
-        .btn { padding: 12px 30px; border-radius: 30px; border: none; font-weight: 800; cursor: pointer; text-transform: uppercase; box-shadow: 0 5px 10px rgba(0,0,0,0.4); transition: 0.1s;}
+        .controls { z-index: 1000; margin-bottom: 20px; display: flex; gap: 20px; }
+        .btn { padding: 12px 40px; border-radius: 30px; border: none; font-weight: 800; cursor: pointer; text-transform: uppercase; box-shadow: 0 5px 15px rgba(0,0,0,0.4); transition: 0.1s;}
         .btn:active { transform: scale(0.95); }
         .btn-take { background: linear-gradient(#ffca28, #ff6f00); color: #3e2723; }
         .btn-bita { background: linear-gradient(#e53935, #b71c1c); color: white; }
-        .btn-restart { background: #42a5f5; color: white; padding: 12px 18px; border-radius: 50%;}
 
-        /* Статус */
-        #status-pill {
-            position: absolute; top: 130px; left: 50%; transform: translateX(-50%);
-            background: rgba(0,0,0,0.7); padding: 8px 20px; border-radius: 20px;
-            font-size: 14px; font-weight: bold; color: #ddd; display: none;
-            border: 1px solid rgba(255,255,255,0.2); z-index: 50;
+        /* Колода және Козырь */
+        #deck-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 100px; 
+            height: 140px;
+        }
+        #deck-count {
+            position: absolute; left: 0; top: 0; z-index: 2;
+            display: flex; justify-content: center; align-items: center;
+            color: white; font-size: 24px; font-weight: bold; text-shadow: 1px 1px 2px black;
+        }
+        #trump-card {
+            position: absolute; left: 20px; top: 0; z-index: 0;
+            transform: rotate(90deg);
+            filter: brightness(0.8);
         }
 
-        #deck-count { position: absolute; left: 15px; font-size: 22px; color: white; text-shadow: 1px 1px 2px black; z-index: 2; display: flex; justify-content: center; align-items: center;}
-        #trump-placeholder { position: absolute; left: 30px; z-index: 0; filter: brightness(0.7); }
+        #status-pill {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8); color: #fff; padding: 10px 20px; border-radius: 10px;
+            font-size: 18px; display: none; pointer-events: none; z-index: 9999;
+        }
 
+        /* Ойыншы статусы (Кезегі кімнің) */
+        #game-info {
+            position: absolute; top: 10px; right: 20px; 
+            text-align: right; color: rgba(255,255,255,0.7); font-size: 14px;
+        }
     </style>
 </head>
 <body>
 
-    <div id="bot-area">
-        <div class="card card-back" id="deck-count">36</div>
-        <div id="trump-placeholder"></div>
-        <div id="bot-hand" style="display:flex;"></div>
+    <div id="deck-container">
+        <div id="trump-card"></div> <div class="card card-back" id="deck-count">36</div>
     </div>
 
-    <div id="status-pill">...</div>
-    
-    <div id="table-area">
-        <div id="drop-zone"></div>
-        <div id="cards-on-table"></div>
-    </div>
+    <div id="game-info">Күту...</div>
+    <div id="status-pill"></div>
+
+    <div id="bot-area"></div>
+
+    <div id="table-area"></div>
 
     <div id="my-area">
         <div class="controls">
-            <button class="btn btn-take" onclick="socket.emit('actionTake')">АЛУ</button>
-            <button class="btn btn-bita" onclick="socket.emit('actionBita')">БИТА</button>
-            <button class="btn btn-restart" onclick="socket.emit('restart')">↻</button>
+            <button class="btn btn-take" onclick="takeAction()">АЛУ</button>
+            <button class="btn btn-bita" onclick="bitaAction()">БИТА</button>
         </div>
         <div id="my-hand"></div>
     </div>
 
     <script>
         const socket = io();
-        const myHandDiv = document.getElementById('my-hand');
-        const botHandDiv = document.getElementById('bot-hand');
-        const tableContainer = document.getElementById('cards-on-table');
-        const dropZone = document.getElementById('drop-zone');
-        const trumpDiv = document.getElementById('trump-placeholder');
-        const statusPill = document.getElementById('status-pill');
-        const deckCountDiv = document.getElementById('deck-count');
+        
+        // DOM элементтері
+        const els = {
+            myHand: document.getElementById('my-hand'),
+            table: document.getElementById('table-area'),
+            deck: document.getElementById('deck-container'),
+            trump: document.getElementById('trump-card'),
+            deckCount: document.getElementById('deck-count'),
+            gameInfo: document.getElementById('game-info'),
+            status: document.getElementById('status-pill'),
+            botArea: document.getElementById('bot-area')
+        };
 
-        // 1. КАРТАНЫ СЫЗУ (HTML & CSS) - СУРЕТСІЗ
-        function createCardHTML(card) {
+        // Локальді жад (анимация дұрыс жүруі үшін ескі карталарды есте сақтаймыз)
+        let myCardsMap = new Map(); // Менің қолымдағы карталар (id -> element)
+        let tableCardsMap = new Map(); // Үстелдегі карталар
+        
+        // Картаның бірегей ID-сын жасау (Suit + Value)
+        const getCardId = (c) => c ? `${c.suit}-${c.value}` : 'unknown';
+
+        // 1. HTML ГЕНЕРАЦИЯ
+        function getCardHTML(card) {
             const isRed = (card.suit === '♥' || card.suit === '♦');
             const colorClass = isRed ? 'red' : 'black';
-            const suitIcons = {'♥':'♥', '♦':'♦', '♣':'♣', '♠':'♠'};
             return `
-                <div class="val-top ${colorClass}">${card.value}<br>${suitIcons[card.suit]}</div>
-                <div class="suit-big ${colorClass}">${suitIcons[card.suit]}</div>
-                <div class="val-bot ${colorClass}">${card.value}<br>${suitIcons[card.suit]}</div>
+                <div class="val-top ${colorClass}">${card.value}<br>${card.suit}</div>
+                <div class="suit-big ${colorClass}">${card.suit}</div>
+                <div class="val-bot ${colorClass}">${card.value}<br>${card.suit}</div>
             `;
         }
 
-        function createCard(card, isFaceUp, index, total, isHand, originalIndex) {
-            const el = document.createElement('div');
-            el.className = 'card';
-
-            if (!isFaceUp) {
-                el.classList.add('card-back');
-                if(!isHand) {
-                    el.style.margin = '0 -35px';
-                    el.style.transform = `translate3d(0, ${-index*1.5}px, 0)`;
-                }
-            } else {
-                // Суреттің орнына таза HTML код
-                el.innerHTML = createCardHTML(card);
-            }
-
-            // --- 2. СҮЙРЕУ ЛОГИКАСЫ (МЫҚТЫ НҰСҚА) ---
-            if (isHand && isFaceUp) {
-                el.classList.add('my-card');
-                
-                // Веер координаттары (Бастапқы орын)
-                const center = (total - 1) / 2;
-                const angle = (index - center) * 5; 
-                const yOffset = Math.abs(index - center) * 10;
-                const xOffset = (index - center) * 45;
-                
-                const baseTransform = `translate3d(${xOffset}px, ${yOffset}px, 0) rotate(${angle}deg)`;
-                
-                // Орналастыру
-                el.style.transform = baseTransform;
-                el.style.zIndex = index + 10;
-                el.dataset.baseTransform = baseTransform;
-
-                // Айнымалылар
-                let startX, startY;
-                let isDragging = false;
-                let shiftX, shiftY;
-
-                // A. Саусақ тиді
-                el.addEventListener('touchstart', (e) => {
-                    const touch = e.touches[0];
-                    const rect = el.getBoundingClientRect();
-                    
-                    // Саусақ картаның қай жерінен ұстады?
-                    shiftX = touch.clientX - rect.left;
-                    shiftY = touch.clientY - rect.top;
-                    
-                    isDragging = false; 
-                }, {passive: false});
-
-                // B. Саусақ жылжыды (СҮЙРЕУ)
-                el.addEventListener('touchmove', (e) => {
-                    e.preventDefault(); // Экранды тоқтату
-                    isDragging = true;
-                    
-                    const touch = e.touches[0];
-                    
-                    // FIXED режимге көшу (Веерден жұлып алу)
-                    el.classList.add('dragging');
-                    el.style.position = 'fixed'; 
-                    el.style.transform = 'scale(1.2)'; // Түзу және үлкен
-                    
-                    // Картаны саусаққа байлау
-                    el.style.left = (touch.clientX - shiftX) + 'px';
-                    el.style.top = (touch.clientY - shiftY) + 'px';
-                    el.style.margin = '0'; // Маржинді алып тастау
-                    
-                }, {passive: false});
-
-                // C. Саусақ алынды (ТАСТАУ)
-                el.addEventListener('touchend', (e) => {
-                    el.classList.remove('dragging');
-                    
-                    // Стильдерді тазалау (қайтадан absolute болу үшін)
-                    el.style.position = 'absolute';
-                    el.style.left = '';
-                    el.style.top = '';
-                    el.style.margin = '';
-                    
-                    if (!isDragging) {
-                        // TAP (Жай басу - Көтеру)
-                        if (el.classList.contains('active')) {
-                            el.classList.remove('active');
-                            el.style.transform = baseTransform;
-                        } else {
-                            document.querySelectorAll('.my-card').forEach(c => {
-                                c.classList.remove('active');
-                                c.style.transform = c.dataset.baseTransform;
-                            });
-                            el.classList.add('active');
-                            // Сәл көтеріп қою
-                            el.style.transform = `translate3d(${xOffset}px, ${yOffset - 40}px, 0) rotate(${angle}deg)`;
-                        }
-                    } else {
-                        // DROP (Үстелге тастау)
-                        const touch = e.changedTouches[0];
-                        const dropRect = dropZone.getBoundingClientRect();
-
-                        // Егер саусақ үстел аймағында болса
-                        if (touch.clientY < dropRect.bottom && touch.clientY > dropRect.top) {
-                            socket.emit('playCard', originalIndex);
-                            el.style.opacity = 0; // Жоғалып кету
-                        } else {
-                            // Қате жер -> Орнына қайту
-                            el.style.transform = baseTransform;
-                            el.style.zIndex = index + 10;
-                        }
-                    }
-                    isDragging = false;
-                });
-            }
-            return el;
-        }
-
-        socket.on('updateState', (state) => {
-            if(state.winner) updateStatus(state.winner === 'player' ? "🎉 ЖЕҢІС!" : "💀 ЖЕҢІЛІС", state.winner === 'player' ? 'gold' : 'red');
-            else if(state.attacker === 'player') updateStatus("Сенің кезегің", "#4cd137");
-            else updateStatus("Күту...", "#bbb");
-
-            // Сұрыптау (Козырь оң жақта)
-            const sortedHand = state.playerHand.map((card, idx) => ({...card, originalIndex: idx}))
-                .sort((a, b) => {
-                    const isATrump = a.suit === state.trumpCard.suit;
-                    const isBTrump = b.suit === state.trumpCard.suit;
-                    const power = {'6':6, '7':7, '8':8, '9':9, '10':10, 'J':11, 'Q':12, 'K':13, 'A':14};
-                    
-                    if (isATrump && !isBTrump) return 1;
-                    if (!isATrump && isBTrump) return -1;
-                    if (a.suit === b.suit) return power[a.value] - power[b.value];
-                    return a.suit.localeCompare(b.suit);
-                });
-
-            myHandDiv.innerHTML = '';
-            sortedHand.forEach((c, i) => {
-                myHandDiv.appendChild(createCard(c, true, i, sortedHand.length, true, c.originalIndex));
+        // 2. КАРТАНЫ ЖАСАУ ЖӘНЕ ҚОЗҒАЛТУ
+        function updateMyHand(cards, trumpSuit) {
+            // Карталарды сұрыптау (Козырь оң жақта)
+            const sorted = [...cards].sort((a, b) => {
+                const isATrump = a.suit === trumpSuit;
+                const isBTrump = b.suit === trumpSuit;
+                const power = {'6':6, '7':7, '8':8, '9':9, '10':10, 'J':11, 'Q':12, 'K':13, 'A':14};
+                if (isATrump && !isBTrump) return 1;
+                if (!isATrump && isBTrump) return -1;
+                if (a.suit === b.suit) return power[a.value] - power[b.value];
+                return a.suit.localeCompare(b.suit);
             });
 
-            botHandDiv.innerHTML = '';
-            for(let i=0; i<state.botCardCount; i++) botHandDiv.appendChild(createCard(null, false, i));
+            const newIds = new Set(sorted.map(getCardId));
 
-            // Үстелді салу
-            tableContainer.innerHTML = '';
-            for (let i = 0; i < state.table.length; i += 2) {
-                const pairDiv = document.createElement('div');
-                pairDiv.className = 'table-pair';
-                
-                const attackCard = state.table[i].card;
-                const attackEl = createCard(attackCard, true, 0,0,false);
-                attackEl.classList.add('card-attack'); 
-                pairDiv.appendChild(attackEl);
-
-                if (state.table[i+1]) {
-                    const defendCard = state.table[i+1].card;
-                    const defendEl = createCard(defendCard, true, 0,0,false);
-                    defendEl.classList.add('card-defend'); 
-                    pairDiv.appendChild(defendEl);
+            // А. Жоқ болған карталарды өшіру
+            for (let [id, el] of myCardsMap) {
+                if (!newIds.has(id)) {
+                    // Егер карта үстелге кетпесе, жай өшіреміз
+                    if (!el.classList.contains('moving-to-table')) {
+                        el.remove();
+                    }
+                    myCardsMap.delete(id);
                 }
-                tableContainer.appendChild(pairDiv);
             }
 
-            trumpDiv.innerHTML = '';
+            // Б. Жаңа карталарды қосу және барлығын орналастыру
+            const total = sorted.length;
+            const handRect = els.myHand.getBoundingClientRect();
+            
+            // Ортасын табу
+            const startX = handRect.width / 2;
+            const startY = 100; // Төменнен
+
+            sorted.forEach((card, i) => {
+                const id = getCardId(card);
+                let el = myCardsMap.get(id);
+
+                // Координаттарды есептеу (Веер эффектісі)
+                const spread = 35; // Карталардың арақашықтығы
+                const angleSpread = 4; // Бұрылу градусы
+                
+                const offset = i - (total - 1) / 2;
+                const x = startX + (offset * spread) - 45; // 45 = карта енінің жартысы
+                const y = Math.abs(offset) * 8; 
+                const rot = offset * angleSpread;
+
+                if (!el) {
+                    // ЖАҢА КАРТА!
+                    el = document.createElement('div');
+                    el.className = 'card my-card';
+                    el.innerHTML = getCardHTML(card);
+                    el.id = id;
+                    
+                    // 1. Бастапқы нүктесі (Колодадан шығады)
+                    const deckRect = els.deckCount.getBoundingClientRect();
+                    el.style.left = deckRect.left + 'px';
+                    el.style.top = deckRect.top + 'px';
+                    el.style.transform = 'rotate(0deg) scale(0.5)';
+                    
+                    els.myHand.appendChild(el);
+                    myCardsMap.set(id, el);
+                    
+                    // Сүйреу логикасын қосу
+                    addDragLogic(el, i, card);
+
+                    // 2. Сәл кешігіп қолға ұшады (Анимация істеу үшін)
+                    requestAnimationFrame(() => {
+                        el.style.left = x + 'px';
+                        el.style.top = y + 'px';
+                        el.style.transform = `rotate(${rot}deg)`;
+                    });
+                } else {
+                    // БҰРЫННАН БАР КАРТА (жай ғана сырғиды)
+                    if (!el.classList.contains('dragging')) {
+                        el.style.left = x + 'px';
+                        el.style.top = y + 'px';
+                        el.style.transform = `rotate(${rot}deg)`;
+                        // Сүйреу индексін жаңарту
+                        el.dataset.index = i; 
+                        el.dataset.baseX = x;
+                        el.dataset.baseY = y;
+                        el.dataset.baseRot = rot;
+                    }
+                }
+            });
+        }
+
+        // 3. ҮСТЕЛДІ ЖАҢАРТУ (Кішірейту және орналастыру)
+        function updateTable(tablePairs) {
+            const tableRect = els.table.getBoundingClientRect();
+            // Үстелді тазалаудың орнына, ID арқылы тексереміз
+            // Қарапайым болу үшін: әр жаңартуда тазалаймыз, бірақ CSS scale бар
+            els.table.innerHTML = ''; 
+
+            let xOffset = -((tablePairs.length - 1) * 60) / 2; 
+
+            tablePairs.forEach(pair => {
+                // Шабуыл картасы
+                const atk = document.createElement('div');
+                atk.className = 'card on-table';
+                atk.innerHTML = getCardHTML(pair.card);
+                atk.style.position = 'relative'; // Relative, себебі flex қолданамыз
+                atk.style.margin = '0 10px';
+                atk.style.transform = `rotate(${Math.random() * 10 - 5}deg) scale(0.75)`;
+                
+                // Қорғаныс картасы
+                if (pair.defendedBy) {
+                    const def = document.createElement('div');
+                    def.className = 'card on-table';
+                    def.innerHTML = getCardHTML(pair.defendedBy);
+                    def.style.position = 'absolute';
+                    def.style.left = '15px';
+                    def.style.top = '15px';
+                    def.style.zIndex = 2;
+                    def.style.transform = `rotate(${Math.random() * 10 + 5}deg) scale(0.75)`;
+                    atk.appendChild(def);
+                }
+                els.table.appendChild(atk);
+            });
+        }
+
+        // 4. СҮЙРЕУ ЛОГИКАСЫ (DRAG & DROP)
+        function addDragLogic(el, index, cardObj) {
+            let isDragging = false;
+            let startX, startY;
+
+            el.addEventListener('touchstart', (e) => {
+                isDragging = false;
+                const touch = e.touches[0];
+                startX = touch.clientX;
+                startY = touch.clientY;
+            }, {passive: false});
+
+            el.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const dx = touch.clientX - startX;
+                const dy = touch.clientY - startY;
+
+                // Егер сәл қозғалса, сүйреу басталды
+                if (Math.abs(dx) > 5 || Math.abs(dy) > 5) isDragging = true;
+
+                if (isDragging) {
+                    el.classList.add('dragging');
+                    // Саусақпен бірге жүру
+                    el.style.transform = `translate(${dx}px, ${dy}px) scale(1.1) rotate(0deg)`;
+                }
+            }, {passive: false});
+
+            el.addEventListener('touchend', (e) => {
+                el.classList.remove('dragging');
+                
+                if (isDragging) {
+                    const touch = e.changedTouches[0];
+                    const tableRect = els.table.getBoundingClientRect();
+
+                    // Егер үстелге тасталса
+                    if (touch.clientY < tableRect.bottom && touch.clientY > tableRect.top) {
+                        // Серверге жіберу
+                        socket.emit('playCard', parseInt(el.dataset.index || index));
+                        
+                        // "Фук етіп жоқ болу" визуализациясы (Сервер жауап бергенше)
+                        el.style.opacity = '0';
+                        el.style.transform = 'scale(0.5)';
+                    } else {
+                        // Орнына қайту
+                        resetCardPosition(el);
+                    }
+                } else {
+                    // Жай басу (Tap) - Орнына қайту
+                    resetCardPosition(el);
+                }
+                isDragging = false;
+            });
+        }
+
+        function resetCardPosition(el) {
+            el.style.transform = `rotate(${el.dataset.baseRot}deg)`;
+            el.style.left = el.dataset.baseX + 'px';
+            el.style.top = el.dataset.baseY + 'px';
+        }
+
+        // SOCKET EVENTS
+        socket.on('updateState', (state) => {
+            // Козырь
             if (state.trumpCard) {
-                const tCard = createCard(state.trumpCard, true, 0,0,false);
-                tCard.style.transform = 'rotate(90deg) translate3d(30px, 0, 0)';
-                tCard.style.zIndex = -1;
-                trumpDiv.appendChild(tCard);
+                els.trump.innerHTML = getCardHTML(state.trumpCard);
             }
-            deckCountDiv.innerText = state.deckCount || "";
-            deckCountDiv.style.opacity = state.deckCount > 0 ? 1 : 0;
+            els.deckCount.innerText = state.deckCount;
+            
+            // Статус
+            if (state.winner) {
+                showStatus(state.winner === 'player' ? "ЖЕҢІС! 😎" : "ЖЕҢІЛІС 😢");
+            } else {
+                els.gameInfo.innerText = state.attacker === 'player' ? "Сіздің жүріс" : "Боттың жүрісі";
+                els.gameInfo.style.color = state.attacker === 'player' ? "#4cd137" : "#ff4757";
+            }
+
+            // Қолды және үстелді жаңарту
+            updateMyHand(state.playerHand, state.trumpCard ? state.trumpCard.suit : '');
+            updateTable(state.table);
+            
+            // Боттың қолын жаңарту (жай ғана саны)
+            els.botArea.innerHTML = '';
+            for(let i=0; i<state.botCardCount; i++) {
+                const bCard = document.createElement('div');
+                bCard.className = 'card card-back';
+                bCard.style.position = 'absolute';
+                bCard.style.left = (50 + i * 10) + '%';
+                bCard.style.top = '10px';
+                bCard.style.transform = 'translateX(-50%) scale(0.6)';
+                els.botArea.appendChild(bCard);
+            }
         });
 
-        function updateStatus(text, color) {
-            statusPill.innerText = text;
-            statusPill.style.color = color;
-            statusPill.style.display = 'block';
+        function takeAction() { socket.emit('actionTake'); }
+        function bitaAction() { socket.emit('actionBita'); }
+
+        function showStatus(text) {
+            els.status.innerText = text;
+            els.status.style.display = 'block';
+            setTimeout(() => els.status.style.display = 'none', 3000);
         }
     </script>
 </body>
