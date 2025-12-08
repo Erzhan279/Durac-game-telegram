@@ -3,15 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Durak Fixed</title>
+    <title>Durak CSS Only</title>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <style>
         body {
-            background: radial-gradient(circle at 50% 40%, #2e7d32 0%, #05140a 100%);
+            background: radial-gradient(circle at 50% 30%, #1b5e20 0%, #05140a 100%);
             color: white;
             font-family: Arial, sans-serif;
             margin: 0;
             height: 100vh;
+            display: flex;
+            flex-direction: column;
             overflow: hidden;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
@@ -19,83 +21,70 @@
         }
 
         #bot-area { height: 130px; display: flex; justify-content: center; align-items: center; position: relative; z-index: 1;}
-        #table-area { flex: 1; position: relative; z-index: 5; }
+        #table-area { flex: 1; display: flex; justify-content: center; align-items: center; perspective: 1000px; position: relative; z-index: 5;}
         #drop-zone { position: absolute; width: 100%; height: 100%; z-index: 0; }
         
         #cards-on-table {
             display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
-            pointer-events: none; width: 100%; height: 100%;
+            width: 100%; height: 100%; pointer-events: none;
         }
 
-        #my-area { 
-            height: 280px; 
-            display: flex; flex-direction: column; justify-content: flex-end; align-items: center; 
-            padding-bottom: 20px; 
-            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); 
-            z-index: 20;
-        }
-        #my-hand { 
-            position: relative; width: 100%; height: 180px; 
-            display: flex; justify-content: center; align-items: flex-end; 
-        }
+        #my-area { height: 280px; display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 20px; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); z-index: 20; }
+        #my-hand { position: relative; width: 100%; height: 180px; display: flex; justify-content: center; align-items: flex-end; }
 
-        /* КАРТА СТИЛІ */
+        /* КАРТА СТИЛІ (CSS) */
         .card {
             width: 90px; height: 135px;
-            background-color: white; 
-            border-radius: 8px;
-            box-shadow: 2px 2px 8px rgba(0,0,0,0.5);
+            background: #fff; border-radius: 8px;
             position: absolute;
-            background-size: 100% 100%;
-            background-repeat: no-repeat;
-            transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), left 0.1s, top 0.1s;
-            transform-origin: bottom center;
+            display: flex; flex-direction: column; justify-content: space-between;
+            padding: 5px; box-sizing: border-box;
+            border: 1px solid #ccc;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+            transition: transform 0.2s;
         }
+
+        .red { color: red; } .black { color: black; }
+        .val-top { font-size: 20px; font-weight: bold; line-height: 1; }
+        .suit-big { font-size: 50px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        .val-bot { font-size: 20px; font-weight: bold; line-height: 1; transform: rotate(180deg); }
 
         .card-back {
-            background-image: url('/cards/back.png');
-            background-size: cover; border: 1px solid #ccc;
+            background: repeating-linear-gradient(45deg, #b00, #b00 10px, #fff 10px, #fff 12px);
+            border: 3px solid white;
         }
+        .card-back * { display: none; }
 
+        /* СҮЙРЕУ */
         .card.dragging {
             z-index: 9999 !important;
             transition: none !important;
-            transform: scale(1.2) rotate(0deg) !important;
+            transform: scale(1.2) !important;
             box-shadow: 0 20px 50px rgba(0,0,0,0.6);
         }
 
-        /* Үстелдегі жұптар */
-        .table-pair { position: relative; width: 90px; height: 135px; margin: 5px 15px; }
-        .card-attack { position: absolute !important; transform: rotate(-2deg) !important; z-index: 1; }
-        .card-defend { position: absolute !important; z-index: 5; transform: translate3d(20px, 10px, 0) rotate(15deg) !important; box-shadow: 2px 5px 15px rgba(0,0,0,0.5); }
+        /* ҮСТЕЛДЕГІ ЖҰПТАР */
+        .table-pair { position: relative; width: 90px; height: 135px; margin: 5px 10px; }
+        .card-attack { position: absolute !important; transform: rotate(-2deg) !important; z-index: 1; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+        .card-defend { position: absolute !important; z-index: 5; transform: translate3d(20px, 15px, 0) rotate(15deg) !important; box-shadow: 2px 5px 10px rgba(0,0,0,0.5); }
 
-        .controls { z-index: 1000; margin-bottom: 20px; display: flex; gap: 20px; }
-        .btn { padding: 12px 35px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.3); font-size: 16px; transition: 0.1s;}
-        .btn:active { transform: scale(0.95); }
-        .btn-take { background: linear-gradient(#ffca28, #ff6f00); color: #3e2723; }
-        .btn-bita { background: linear-gradient(#e53935, #b71c1c); color: white; }
-        
-        #deck-area { position: absolute; left: 10px; top: 45%; width: 90px; height: 135px; }
-        #deck-count { position: absolute; left: 0; top: 0; z-index: 2; display: flex; justify-content: center; align-items: center; color: white; font-weight: bold; font-size: 22px; text-shadow: 1px 1px 2px black;}
-        #trump-container { position: absolute; left: 25px; top: 15px; z-index: 1; transform: rotate(90deg); filter: brightness(0.9); }
+        .controls { z-index: 1000; margin-bottom: 20px; display: flex; gap: 20px; justify-content: center; width: 100%; }
+        .btn { padding: 12px 30px; border-radius: 20px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; pointer-events: auto; }
+        .btn-take { background: #ffcc00; } .btn-bita { background: #cc0000; color: white; }
 
-        #status-msg {
-            position: absolute; top: 120px; left: 50%; transform: translateX(-50%);
-            background: rgba(0,0,0,0.6); color: white; padding: 8px 20px; border-radius: 20px; font-weight: bold;
-            z-index: 50; display: none; backdrop-filter: blur(5px);
-        }
+        #deck-count { position: absolute; left: 15px; font-size: 22px; color: black; z-index: 2; display: flex; justify-content: center; align-items: center; font-weight: bold;}
+        #trump-placeholder { position: absolute; left: 30px; z-index: 0; filter: brightness(0.8); }
+        #status-pill { position: absolute; top: 120px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); padding: 8px 20px; border-radius: 20px; font-weight: bold; color: #fff; display: none; z-index: 50; }
     </style>
 </head>
 <body>
 
-    <div id="status-msg"></div>
+    <div id="status-pill">...</div>
 
     <div id="bot-area">
-        <div id="deck-area">
-            <div id="trump-container"></div>
-            <div class="card card-back" id="deck-count">36</div>
-        </div>
-        <div id="bot-hand" style="display:flex; justify-content:center;"></div>
+        <div class="card card-back" id="deck-count">36</div>
+        <div id="trump-placeholder"></div>
+        <div id="bot-hand" style="display:flex;"></div>
     </div>
 
     <div id="table-area">
@@ -117,167 +106,133 @@
         const botHandDiv = document.getElementById('bot-hand');
         const tableContainer = document.getElementById('cards-on-table');
         const dropZone = document.getElementById('drop-zone');
-        const trumpContainer = document.getElementById('trump-container');
+        const trumpDiv = document.getElementById('trump-placeholder');
+        const statusPill = document.getElementById('status-pill');
         const deckCountDiv = document.getElementById('deck-count');
-        const statusMsg = document.getElementById('status-msg');
 
-        function getCardImage(card) {
-            if(!card) return '';
-            const suitCodes = {'♥': 'h', '♦': 'd', '♣': 'c', '♠': 's'};
-            const valCodes = {'J':'j', 'Q':'q', 'K':'k', 'A':'a'};
-            const s = suitCodes[card.suit];
-            const v = valCodes[card.value] || card.value;
-            return `/cards/${v}${s}.png`;
+        // HTML КАРТА ЖАСАУ
+        function createCardHTML(card) {
+            const isRed = (card.suit === '♥' || card.suit === '♦');
+            const cls = isRed ? 'red' : 'black';
+            return `
+                <div class="val-top ${cls}">${card.value}<br>${card.suit}</div>
+                <div class="suit-big ${cls}">${card.suit}</div>
+                <div class="val-bot ${cls}">${card.value}<br>${card.suit}</div>
+            `;
         }
 
-        function createCardElement(card, isFaceUp, index, total, isHand, originalIndex) {
+        function createCard(card, isFaceUp, index, total, isHand, originalIndex) {
             const el = document.createElement('div');
             el.className = 'card';
-            
+
             if (!isFaceUp) {
                 el.classList.add('card-back');
-                if(!isHand) el.style.margin = '0 -45px'; 
-                el.style.position = 'relative';
-            } else {
-                const imgUrl = getCardImage(card);
-                el.style.backgroundImage = `url('${imgUrl}')`;
-                
-                if(isHand) {
-                    el.classList.add('my-card');
-                    el.style.position = 'absolute';
-                    
-                    const center = (total - 1) / 2;
-                    const angle = (index - center) * 5; 
-                    const yOffset = Math.abs(index - center) * 10;
-                    const xOffset = (index - center) * 45;
-                    
-                    const baseTransform = `translateX(${xOffset}px) translateY(${yOffset}px) rotate(${angle}deg)`;
-                    
-                    el.style.transform = baseTransform;
-                    el.style.zIndex = index;
-                    el.dataset.baseTransform = baseTransform;
-
-                    // --- СҮЙРЕУ ---
-                    let startX, startY;
-                    let isDragging = false;
-                    
-                    el.addEventListener('touchstart', (e) => {
-                        e.preventDefault(); 
-                        const touch = e.touches[0];
-                        const rect = el.getBoundingClientRect();
-                        
-                        isDragging = false;
-                        el.style.transition = 'none';
-                        
-                        startX = touch.clientX;
-                        startY = touch.clientY;
-                    }, {passive: false});
-
-                    el.addEventListener('touchmove', (e) => {
-                        e.preventDefault();
-                        const touch = e.touches[0];
-                        const dx = touch.clientX - startX;
-                        const dy = touch.clientY - startY;
-                        
-                        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
-                            isDragging = true;
-                            el.classList.add('dragging');
-                            el.style.position = 'fixed';
-                            el.style.transform = 'scale(1.2)';
-                            
-                            // Саусаққа байлау
-                            el.style.left = (touch.clientX - 45) + 'px';
-                            el.style.top = (touch.clientY - 65) + 'px';
-                            el.style.margin = '0';
-                        }
-                    }, {passive: false});
-
-                    el.addEventListener('touchend', (e) => {
-                        el.classList.remove('dragging');
-                        el.style.transition = 'transform 0.4s';
-                        
-                        const rect = el.getBoundingClientRect();
-                        const tableRect = document.getElementById('table-area').getBoundingClientRect();
-
-                        if (isDragging && rect.top < tableRect.bottom && rect.bottom > tableRect.top) {
-                            socket.emit('playCard', originalIndex);
-                            el.style.display = 'none'; 
-                        } else {
-                            el.style.position = 'absolute';
-                            el.style.left = '';
-                            el.style.top = '';
-                            el.style.margin = '';
-                            el.style.transform = baseTransform;
-                        }
-                    });
-                } else {
-                    el.style.position = 'relative'; 
+                if(!isHand) {
+                    el.style.margin = '0 -35px';
+                    el.style.transform = `translate3d(0, ${-index*2}px, 0)`;
                 }
+            } else {
+                el.innerHTML = createCardHTML(card);
+            }
+
+            if (isHand && isFaceUp) {
+                el.style.margin = '0 -35px';
+                el.style.transform = `translate3d(0, ${-index*2}px, 0)`;
+                el.style.zIndex = index;
+
+                // --- СҮЙРЕУ ---
+                let startX, startY;
+                
+                el.addEventListener('touchstart', (e) => {
+                    const touch = e.touches[0];
+                    const rect = el.getBoundingClientRect();
+                    el.classList.add('dragging');
+                    
+                    // FIXED - экранға шығару
+                    el.style.position = 'fixed';
+                    el.style.left = (touch.clientX - 45) + 'px';
+                    el.style.top = (touch.clientY - 65) + 'px';
+                    el.style.margin = '0';
+                    
+                    startX = touch.clientX;
+                    startY = touch.clientY;
+                }, {passive: false});
+
+                el.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    // Саусақпен бірге жүру
+                    el.style.left = (touch.clientX - 45) + 'px';
+                    el.style.top = (touch.clientY - 65) + 'px';
+                }, {passive: false});
+
+                el.addEventListener('touchend', (e) => {
+                    el.classList.remove('dragging');
+                    const rect = el.getBoundingClientRect();
+                    const tableRect = document.getElementById('table-area').getBoundingClientRect();
+
+                    if (rect.top < tableRect.bottom && rect.bottom > tableRect.top) {
+                        socket.emit('playCard', originalIndex);
+                        el.style.display = 'none';
+                    } else {
+                        // ОРНЫНА ҚАЙТУ
+                        el.style.position = 'relative';
+                        el.style.left = '';
+                        el.style.top = '';
+                        el.style.margin = '0 -35px';
+                        el.style.transform = `translate3d(0, ${-index*2}px, 0)`;
+                    }
+                });
             }
             return el;
         }
 
         socket.on('updateState', (state) => {
             if(state.winner) {
-                statusMsg.innerText = state.winner === 'player' ? "ЖЕҢІС!" : "ЖЕҢІЛІС";
-                statusMsg.style.display = 'block';
+                statusPill.innerText = state.winner === 'player' ? "ЖЕҢІС!" : "ЖЕҢІЛІС";
+                statusPill.style.display = 'block';
             } else if(state.attacker === 'player') {
-                statusMsg.innerText = "Сенің кезегің";
-                statusMsg.style.display = 'block';
+                statusPill.innerText = "Сенің кезегің";
+                statusPill.style.display = 'block';
             } else {
-                statusMsg.style.display = 'none';
+                statusPill.style.display = 'none';
             }
 
-            const sortedHand = state.playerHand.map((card, idx) => ({...card, originalIndex: idx}))
-                .sort((a, b) => {
-                    const isATrump = a.suit === state.trumpCard.suit;
-                    const isBTrump = b.suit === state.trumpCard.suit;
-                    const power = {'6':6, '7':7, '8':8, '9':9, '10':10, 'J':11, 'Q':12, 'K':13, 'A':14};
-                    if (isATrump && !isBTrump) return 1;
-                    if (!isATrump && isBTrump) return -1;
-                    if (a.suit === b.suit) return power[a.value] - power[b.value];
-                    return a.suit.localeCompare(b.suit);
-                });
+            const sortedHand = state.playerHand.map((card, idx) => ({...card, originalIndex: idx})).sort((a,b) => {
+                 if (a.suit === state.trumpCard.suit && b.suit !== state.trumpCard.suit) return 1;
+                 if (a.suit !== state.trumpCard.suit && b.suit === state.trumpCard.suit) return -1;
+                 return 0;
+            });
 
             myHandDiv.innerHTML = '';
-            sortedHand.forEach((c, i) => {
-                myHandDiv.appendChild(createCardElement(c, true, i, sortedHand.length, true, c.originalIndex));
-            });
+            sortedHand.forEach((c, i) => myHandDiv.appendChild(createCard(c, true, i, sortedHand.length, true, c.originalIndex)));
 
             botHandDiv.innerHTML = '';
-            for(let i=0; i<state.botCardCount; i++) {
-                botHandDiv.appendChild(createCardElement(null, false, i, state.botCardCount, false));
-            }
+            for(let i=0; i<state.botCardCount; i++) botHandDiv.appendChild(createCard(null, false, i));
 
-            // --- ОСЫ ЖЕР ТҮЗЕТІЛДІ (СЕРВЕРДЕН ЖҰПТЫ ДҰРЫС ОҚУ) ---
             tableContainer.innerHTML = '';
             state.table.forEach(pair => {
-                const pairDiv = document.createElement('div');
-                pairDiv.className = 'table-pair';
-                
-                // Шабуыл картасы
-                const attackEl = createCardElement(pair.attack, true, 0,0,false);
-                attackEl.classList.add('card-attack'); 
-                pairDiv.appendChild(attackEl);
-
-                // Қорғаныс картасы (егер болса)
-                if (pair.defend) {
-                    const defendEl = createCardElement(pair.defend, true, 0,0,false);
-                    defendEl.classList.add('card-defend'); 
-                    pairDiv.appendChild(defendEl);
+                const div = document.createElement('div');
+                div.className = 'table-pair';
+                const c1 = createCard(pair.attack, true, 0,0,false);
+                c1.classList.add('card-attack');
+                div.appendChild(c1);
+                if(pair.defend) {
+                    const c2 = createCard(pair.defend, true, 0,0,false);
+                    c2.classList.add('card-defend');
+                    div.appendChild(c2);
                 }
-                tableContainer.appendChild(pairDiv);
+                tableContainer.appendChild(div);
             });
 
-            trumpContainer.innerHTML = '';
+            trumpDiv.innerHTML = '';
             if (state.trumpCard) {
-                const tCard = createCardElement(state.trumpCard, true, 0,0,false);
-                tCard.style.position = 'relative';
-                tCard.style.transform = 'none';
-                tCard.style.margin = '0';
-                trumpContainer.appendChild(tCard);
+                const t = createCard(state.trumpCard, true, 0,0,false);
+                t.style.transform = 'rotate(90deg) translateX(30px)';
+                t.style.zIndex = -1;
+                trumpDiv.appendChild(t);
             }
-            deckCountDiv.innerText = state.deckCount;
+            deckCountDiv.innerText = state.deckCount || "";
             if(state.deckCount === 0) deckCountDiv.style.opacity = 0;
         });
     </script>
