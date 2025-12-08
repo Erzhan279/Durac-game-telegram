@@ -7,8 +7,9 @@ const path = require('path');
 const app = express();
 app.use(cors());
 
-// СУРЕТТЕРДІ АШУ (Маңызды!)
+// --- 👇 ЕҢ МАҢЫЗДЫ ЖОЛ! ОСЫ ЖОЛ СУРЕТТІ АШАДЫ 👇 ---
 app.use(express.static(path.join(__dirname, 'public')));
+// ----------------------------------------------------
 
 const server = http.createServer(app);
 
@@ -18,19 +19,14 @@ app.get('/', (req, res) => {
 
 const io = new Server(server, { cors: { origin: "*" } });
 
-// --- ОЙЫН ЛОГИКАСЫ ---
+// --- ОЙЫН ЛОГИКАСЫ (Бот, Карта, Ережелер) ---
 const suits = ['♥', '♦', '♣', '♠'];
 const values = ['6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
 const power = { '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14 };
 
 let game = {
-    deck: [],
-    playerHand: [],
-    botHand: [],
-    table: [], 
-    trumpCard: null,
-    attacker: null, // 'player' немесе 'bot'
-    winner: null
+    deck: [], playerHand: [], botHand: [], table: [], 
+    trumpCard: null, attacker: 'player', winner: null
 };
 
 function createDeck() {
@@ -48,60 +44,40 @@ function startGame() {
     game.winner = null;
     game.playerHand = game.deck.splice(0, 6);
     game.botHand = game.deck.splice(0, 6);
-    game.attacker = 'player'; // Әзірге адам бастасын
-    return "Ойын басталды!";
+    game.attacker = 'player';
 }
 
-// КАРТА ТЕКСЕРУ
-function canBeat(attackCard, defenseCard) {
-    if (attackCard.suit === defenseCard.suit) return defenseCard.power > attackCard.power;
-    if (defenseCard.suit === game.trumpCard.suit && attackCard.suit !== game.trumpCard.suit) return true;
-    return false;
-}
-
-// БОТТЫҢ МИЫ
 function botTurn(socket) {
     if (game.winner) return;
-
     setTimeout(() => {
-        // 1. БОТ ҚОРҒАНАДЫ
-        if (game.attacker === 'player') {
-            if (game.table.length === 0) return; // Қорғанатын ештеңе жоқ
-            
+        if (game.attacker === 'player') { 
+            // Қорғаныс
+            if (game.table.length === 0) return;
             const attackCard = game.table[game.table.length - 1].card;
+            let defIndex = game.botHand.findIndex(c => {
+                if(c.suit === attackCard.suit) return c.power > attackCard.power;
+                if(c.suit === game.trumpCard.suit && attackCard.suit !== game.trumpCard.suit) return true;
+                return false;
+            });
             
-            // Жауап іздейді
-            let defenseIndex = game.botHand.findIndex(c => canBeat(attackCard, c));
-            
-            if (defenseIndex !== -1) {
-                // Жабады
-                const card = game.botHand.splice(defenseIndex, 1)[0];
-                game.table.push({ card, owner: 'bot' });
+            if (defIndex !== -1) {
+                game.table.push({ card: game.botHand.splice(defIndex, 1)[0], owner: 'bot' });
                 sendUpdate(socket);
             } else {
-                // Алады
-                socket.emit('message', 'Бот карталарды алды!');
                 takeCards('bot', socket);
             }
-        } 
-        // 2. БОТ ШАБУЫЛДАЙДЫ
-        else {
+        } else { 
+            // Шабуыл
             if (game.table.length === 0) {
-                // Ең кіші картамен жүреді
-                game.botHand.sort((a, b) => a.power - b.power);
-                const card = game.botHand.shift();
-                game.table.push({ card, owner: 'bot' });
+                game.botHand.sort((a,b)=>a.power-b.power);
+                game.table.push({ card: game.botHand.shift(), owner: 'bot' });
                 sendUpdate(socket);
             } else {
-                // Үстелдегі картаға ұқсасын тастайды
                 const matchIndex = game.botHand.findIndex(c => game.table.some(t => t.card.value === c.value));
                 if (matchIndex !== -1) {
-                    const card = game.botHand.splice(matchIndex, 1)[0];
-                    game.table.push({ card, owner: 'bot' });
+                    game.table.push({ card: game.botHand.splice(matchIndex, 1)[0], owner: 'bot' });
                     sendUpdate(socket);
                 } else {
-                    // Бита
-                    socket.emit('message', 'Бот: Бита!');
                     endTurn(socket);
                 }
             }
@@ -113,22 +89,17 @@ function takeCards(who, socket) {
     const cards = game.table.map(t => t.card);
     if (who === 'player') game.playerHand.push(...cards);
     else game.botHand.push(...cards);
-    
     game.table = [];
     fillHands();
     sendUpdate(socket);
-    
-    // Кім алса, сол келесі жолы да қорғанады (шабуылшы ауыспайды)
     if (game.attacker === 'bot') botTurn(socket);
 }
 
 function endTurn(socket) {
     game.table = [];
     fillHands();
-    // Кезек ауысады
     game.attacker = game.attacker === 'player' ? 'bot' : 'player';
     sendUpdate(socket);
-    
     if (game.attacker === 'bot') botTurn(socket);
 }
 
@@ -138,59 +109,27 @@ function fillHands() {
 }
 
 function sendUpdate(socket) {
-    // Жеңімпаз бар ма?
     if (game.deck.length === 0 && game.playerHand.length === 0) game.winner = 'player';
     if (game.deck.length === 0 && game.botHand.length === 0) game.winner = 'bot';
-
     socket.emit('updateState', {
-        playerHand: game.playerHand,
-        table: game.table,
-        trumpCard: game.trumpCard,
-        botCardCount: game.botHand.length,
-        deckCount: game.deck.length,
-        attacker: game.attacker,
-        winner: game.winner
+        playerHand: game.playerHand, table: game.table, trumpCard: game.trumpCard,
+        botCardCount: game.botHand.length, deckCount: game.deck.length,
+        attacker: game.attacker, winner: game.winner
     });
 }
 
 io.on('connection', (socket) => {
     startGame();
     sendUpdate(socket);
-
-    socket.on('playCard', (index) => {
-        if (game.attacker === 'bot' && game.table.length % 2 === 0) return; // Кезек сенікі емес
-
-        const card = game.playerHand[index];
-        
-        // Валидация
-        if (game.attacker === 'player') {
-            if (game.table.length > 0) {
-                const canToss = game.table.some(t => t.card.value === card.value);
-                if (!canToss) return; // Үстелде жоқ картаны тастама
-            }
-        } else {
-            const attackCard = game.table[game.table.length - 1].card;
-            if (!canBeat(attackCard, card)) return; // Жаба алмайсың
-        }
-
-        game.playerHand.splice(index, 1);
-        game.table.push({ card, owner: 'player' });
+    socket.on('playCard', (idx) => {
+        if (game.attacker === 'bot' && game.table.length % 2 === 0) return;
+        game.table.push({ card: game.playerHand.splice(idx, 1)[0], owner: 'player' });
         sendUpdate(socket);
         botTurn(socket);
     });
-
-    socket.on('actionBita', () => {
-        if (game.attacker === 'player' && game.table.length > 0) endTurn(socket);
-    });
-
-    socket.on('actionTake', () => {
-        if (game.attacker === 'bot') takeCards('player', socket);
-    });
-
-    socket.on('restart', () => {
-        startGame();
-        sendUpdate(socket);
-    });
+    socket.on('actionBita', () => { if(game.attacker === 'player') endTurn(socket); });
+    socket.on('actionTake', () => { if(game.attacker === 'bot') takeCards('player', socket); });
+    socket.on('restart', () => { startGame(); sendUpdate(socket); });
 });
 
 const PORT = process.env.PORT || 3000;
