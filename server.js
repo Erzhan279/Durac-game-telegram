@@ -29,7 +29,7 @@ function createDeck() {
 function startGame() {
     game.deck = createDeck();
     game.trumpCard = game.deck[game.deck.length - 1]; 
-    game.table = [];
+    game.table = []; // Тізім: [{attack: card, defend: card/null}]
     game.winner = null;
     game.playerHand = [];
     game.botHand = [];
@@ -47,56 +47,55 @@ function botTurn(socket) {
     if (game.winner) return;
     setTimeout(() => {
         if (game.attacker === 'player') { 
-            if (game.table.length === 0) return;
-            // Соңғы картаны алу (ескі стильмен)
-            const attackCard = game.table[game.table.length - 1].card;
-            
-            // Егер соңғы карта боттыкі болса, демек ол жапты -> кезек адамда
-            if (game.table[game.table.length - 1].owner === 'bot') return;
-
-            let candidates = game.botHand.filter(c => canBeat(attackCard, c));
-            candidates.sort((a,b) => a.power - b.power);
-            
-            if (candidates.length > 0) {
-                const card = candidates[0];
-                game.botHand.splice(game.botHand.indexOf(card), 1);
-                game.table.push({ card, owner: 'bot' });
-                sendUpdate(socket);
-            } else {
-                takeCards('bot', socket);
+            // БОТ ҚОРҒАНАДЫ
+            let pair = game.table[game.table.length - 1];
+            if(pair && !pair.defend) {
+                let candidates = game.botHand.filter(c => canBeat(pair.attack, c));
+                candidates.sort((a,b) => a.power - b.power);
+                
+                if (candidates.length > 0) {
+                    let card = candidates[0];
+                    game.botHand.splice(game.botHand.indexOf(card), 1);
+                    pair.defend = card;
+                    sendUpdate(socket);
+                } else {
+                    takeCards('bot', socket);
+                }
             }
         } else { 
-            // Бот шабуылдайды
-            if (game.table.length === 0 || game.table.length % 2 === 0) { // Жұп болса -> жаңа шабуыл
-                 // Ең кіші карта
-                game.botHand.sort((a,b) => a.power - b.power);
-                let card = game.botHand[0];
-                
-                // Подкидной ережесі
-                if (game.table.length > 0) {
-                    let tableVals = game.table.map(t => t.card.value);
-                    let toss = game.botHand.find(c => tableVals.includes(c.value));
-                    if(toss) card = toss;
-                    else {
-                        endTurn(socket); // Тастайтын жоқ -> Бита
-                        return;
-                    }
+            // БОТ ШАБУЫЛДАЙДЫ
+            // Егер үстел бос болса немесе бәрі жабылса
+            let allCovered = game.table.every(p => p.defend !== null);
+            if (game.table.length === 0 || (allCovered && game.table.length < 6)) {
+                let card = null;
+                if(game.table.length === 0) {
+                    game.botHand.sort((a,b) => a.power - b.power);
+                    card = game.botHand[0];
+                } else {
+                    // Подкидной
+                    let tableVals = new Set();
+                    game.table.forEach(p => { tableVals.add(p.attack.value); if(p.defend) tableVals.add(p.defend.value); });
+                    card = game.botHand.find(c => tableVals.has(c.value));
                 }
 
-                game.botHand.splice(game.botHand.indexOf(card), 1);
-                game.table.push({ card, owner: 'bot' });
-                sendUpdate(socket);
+                if (card) {
+                    game.botHand.splice(game.botHand.indexOf(card), 1);
+                    game.table.push({ attack: card, defend: null });
+                    sendUpdate(socket);
+                } else {
+                    if(game.table.length > 0) endTurn(socket);
+                }
             }
         }
     }, 1000);
 }
 
 function takeCards(who, socket) {
-    let cards = game.table.map(t => t.card);
+    let cards = [];
+    game.table.forEach(p => { cards.push(p.attack); if(p.defend) cards.push(p.defend); });
+    game.table = [];
     if(who === 'player') game.playerHand.push(...cards);
     else game.botHand.push(...cards);
-    
-    game.table = [];
     fillHands();
     sendUpdate(socket);
     if(game.attacker === 'bot') botTurn(socket);
@@ -134,26 +133,35 @@ io.on('connection', (socket) => {
     sendUpdate(socket);
 
     socket.on('playCard', (index) => {
-        if (game.attacker === 'bot' && game.table.length % 2 === 0) return;
+        if (game.attacker === 'bot' && game.table.every(p => p.defend !== null)) return;
         
         let card = game.playerHand[index];
-        // Қарапайым тексеріс
-        if (game.attacker === 'bot') {
-             // Қорғаныс
-             let attackCard = game.table[game.table.length - 1].card;
-             if (!canBeat(attackCard, card)) return;
+        let isValid = false;
+
+        if (game.attacker === 'player') {
+            // Шабуыл
+            if (game.table.length === 0) isValid = true;
+            else {
+                // Подкидной
+                let tableVals = new Set();
+                game.table.forEach(p => { tableVals.add(p.attack.value); if(p.defend) tableVals.add(p.defend.value); });
+                if (tableVals.has(card.value) && game.table.every(p => p.defend)) isValid = true;
+            }
+            if(isValid) game.table.push({ attack: card, defend: null });
         } else {
-            // Шабуыл (Подкидной)
-            if (game.table.length > 0) {
-                let tableVals = game.table.map(t => t.card.value);
-                if (!tableVals.includes(card.value)) return;
+            // Қорғаныс
+            let pair = game.table[game.table.length - 1];
+            if (pair && !pair.defend && canBeat(pair.attack, card)) {
+                isValid = true;
+                pair.defend = card;
             }
         }
 
-        game.playerHand.splice(index, 1);
-        game.table.push({ card, owner: 'player' });
-        sendUpdate(socket);
-        botTurn(socket);
+        if (isValid) {
+            game.playerHand.splice(index, 1);
+            sendUpdate(socket);
+            botTurn(socket);
+        }
     });
 
     socket.on('actionTake', () => { if(game.attacker === 'bot') takeCards('player', socket); });
