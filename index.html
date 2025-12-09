@@ -129,14 +129,15 @@
         /* Слоттың өзін кішірейтеміз */
         /* 1. Үстелдегі карталар тұратын орынды кеңейтеміз */
 /* Бұрын 55px/85px болған, енді карта сыю үшін үлкейтеміз */
+/* 1. Слот өлшемі (өзгеріссіз қалады, сізге ұнаған өлшем) */
 .table-pair {
-    width: 70px !important;   /* Енін үлкейттік */
-    height: 100px !important; /* Биіктігін үлкейттік */
-    margin: 5px 15px !important;
     position: relative;
+    width: 60px !important; 
+    height: 90px !important; 
+    margin: 5px 10px !important; 
 }
 
-/* 2. Картаның өзін үлкейтеміз және сапасын түзетеміз */
+/* 2. Карта стилі */
 .table-pair .card {
     position: absolute;
     top: 0;
@@ -144,25 +145,25 @@
     width: 100%;
     height: 100%;
     
-    /* 0.65 тым кішкентай болды, 0.85 (немесе 0.8) жақсы көрінеді */
-    transform: scale(0.85) !important; 
-    transform-origin: center center !important; /* Ортасынан бастап үлкею үшін */
-    
-    /* "Виді бұзылған" дегенді түзеу үшін: */
-    object-fit: contain; /* Карта суреті созылып кетпеуі үшін */
-    
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3) !important;
-    transition: transform 0.3s ease;
+    /* МАҢЫЗДЫ ЖЕРІ: Ортасындағы таңбаны кішірейту үшін */
+    padding: 6px !important;  /* <--- Осыны қосыңыз! (4px пен 8px арасында ойнап көріңіз) */
+    box-sizing: border-box !important; /* Padding картаның сыртына шығып кетпеуі үшін */
+    background-color: white !important; /* Артқы фоны ақ болып тұруы шарт */
+
+    /* Масштаб пен көлеңке */
+    transform: scale(0.75) !important; 
+    transform-origin: top left !important;
+    box-shadow: -3px 3px 7px rgba(0,0,0,0.4) !important; /* Көлеңкені сәл қарайттық, "жерде жатқандай" болуы үшін */
+    border-radius: 6px !important; /* Бұрыштарын жұмсартамыз */
 }
 
-/* 3. Қорғаныс картасы (үстіңгісі) */
+/* 3. Үстіңгі (қорғаныс) карта */
 .card-defend {
     z-index: 10 !important;
-    
-    /* scale(0.85)-ке өзгерттік, карталар бірдей болуы керек */
-    /* translate мәндерін сәл үлкейттік, себебі карта үлкейді */
-    transform: translate(15px, 5px) rotate(15deg) scale(0.85) !important;
+    /* Қисаюы жақсы, сол күйінде қалдырамыз */
+    transform: translate(25px, 5px) rotate(10deg) scale(0.75) !important;
 }
+
 
         /* Батырмалар */
         .controls { z-index: 1000; margin-bottom: 25px; display: flex; gap: 15px; }
