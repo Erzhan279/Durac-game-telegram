@@ -124,45 +124,33 @@
             border: 2px solid gold;
         }
 
-    
+        /* Үстелдегі жұптар (Шабуыл және Қорғаныс) */
+                /* --- ҮСТЕЛДЕГІ ЖҰПТАРДЫ КІШІРЕЙТУ --- */
+                /* --- ҮСТЕЛДЕГІ КАРТАЛАРДЫ РЕТТЕУ --- */
         
         /* Слоттың өзін кішірейтеміз */
-        /* 1. Үстелдегі карталар тұратын орынды кеңейтеміз */
-/* Бұрын 55px/85px болған, енді карта сыю үшін үлкейтеміз */
-/* 1. Слот өлшемі (өзгеріссіз қалады, сізге ұнаған өлшем) */
-.table-pair {
-    position: relative;
-    width: 60px !important; 
-    height: 90px !important; 
-    margin: 5px 10px !important; 
-}
+        .table-pair { 
+            position: relative; 
+            width: 55px !important;  /* 90px емес */
+            height: 85px !important; /* 135px емес */
+            margin: 5px 15px !important; 
+        }
 
-/* 2. Карта стилі */
-.table-pair .card {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    
-    /* МАҢЫЗДЫ ЖЕРІ: Ортасындағы таңбаны кішірейту үшін */
-    padding: 6px !important;  /* <--- Осыны қосыңыз! (4px пен 8px арасында ойнап көріңіз) */
-    box-sizing: border-box !important; /* Padding картаның сыртына шығып кетпеуі үшін */
-    background-color: white !important; /* Артқы фоны ақ болып тұруы шарт */
+        /* Үстелдегі картаның өзін кішірейту (Scale) */
+        .table-pair .card {
+            /* Картаны 65% өлшемге дейін кішірейтеміз */
+            transform: scale(0.65) !important; 
+            transform-origin: top left !important; /* Сол жақ жоғарыдан бастап кішірейеді */
+            margin: 0 !important;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3) !important; /* Көлеңкесін азайтамыз */
+        }
 
-    /* Масштаб пен көлеңке */
-    transform: scale(0.75) !important; 
-    transform-origin: top left !important;
-    box-shadow: -3px 3px 7px rgba(0,0,0,0.4) !important; /* Көлеңкені сәл қарайттық, "жерде жатқандай" болуы үшін */
-    border-radius: 6px !important; /* Бұрыштарын жұмсартамыз */
-}
-
-/* 3. Үстіңгі (қорғаныс) карта */
-.card-defend {
-    z-index: 10 !important;
-    /* Қисаюы жақсы, сол күйінде қалдырамыз */
-    transform: translate(25px, 5px) rotate(10deg) scale(0.75) !important;
-}
+        /* Қорғаныс картасын (2-ші картаны) әдемілеп қою */
+        .card-defend {
+            /* Сәл оңға және төмен жылжытып, қисайтамыз */
+            transform: translate3d(20px, 10px, 0) rotate(15deg) scale(0.65) !important;
+            z-index: 10 !important;
+        }
 
 
         /* Батырмалар */
