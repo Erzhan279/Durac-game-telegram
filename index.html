@@ -257,24 +257,8 @@
                 
                 el.style.transform = baseTransform;
                 el.style.zIndex = index + 10;
-                el.dataset.baseTransform = baseTransform; // Сүйреу үшін есте сақтау
+                el.dataset.baseTransform = baseTransform; 
 
-                // ... (Ары қарай сенің сүйреу (touchstart) кодың жалғаса береді) ...
-
-             
-                
-                // Веер координаттары (Бастапқы орын)
-                const center = (total - 1) / 2;
-                const angle = (index - center) * 5; 
-                const yOffset = Math.abs(index - center) * 10;
-                const xOffset = (index - center) * 45;
-                
-                const baseTransform = `translate3d(${xOffset}px, ${yOffset}px, 0) rotate(${angle}deg)`;
-                
-                // Орналастыру
-                el.style.transform = baseTransform;
-                el.style.zIndex = index + 10;
-                el.dataset.baseTransform = baseTransform;
 
                 // Айнымалылар
                 let startX, startY;
