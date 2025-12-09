@@ -129,28 +129,48 @@
                 /* --- ҮСТЕЛДЕГІ КАРТАЛАРДЫ РЕТТЕУ --- */
         
         /* Слоттың өзін кішірейтеміз */
+                /* --- ҮСТЕЛДЕГІ КАРТАЛАРДЫҢ ОРНАЛАСУЫ (ТҮЗЕТІЛГЕН) --- */
+        
+        /* 1. Слоттың (жұптың) өлшемі */
         .table-pair { 
             position: relative; 
-            width: 55px !important;  /* 90px емес */
-            height: 85px !important; /* 135px емес */
-            margin: 5px 15px !important; 
+            width: 60px !important;   /* Жинақы болу үшін */
+            height: 90px !important;
+            margin: 10px 20px !important; /* Арақашықтықты сәл ашамыз */
         }
 
-        /* Үстелдегі картаның өзін кішірейту (Scale) */
+        /* Барлық үстел карталарына ортақ қасиет */
         .table-pair .card {
-            /* Картаны 65% өлшемге дейін кішірейтеміз */
-            transform: scale(0.65) !important; 
-            transform-origin: top left !important; /* Сол жақ жоғарыдан бастап кішірейеді */
             margin: 0 !important;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3) !important; /* Көлеңкесін азайтамыз */
+            transform-origin: center center !important; /* Карта ортасынан бұрылады */
+            transition: transform 0.3s ease-out !important;
         }
 
-        /* Қорғаныс картасын (2-ші картаны) әдемілеп қою */
-        .card-defend {
-            /* Сәл оңға және төмен жылжытып, қисайтамыз */
-            transform: translate3d(20px, 10px, 0) rotate(15deg) scale(0.65) !important;
-            z-index: 10 !important;
+        /* 2. Шабуыл картасы (Астындағы) */
+        /* Сәл солға қисаяды (-5 градус) */
+        .card-attack { 
+            position: absolute !important; 
+            z-index: 1 !important; 
+            left: 0; top: 0;
+            transform: scale(0.65) rotate(-5deg) !important; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3) !important; 
         }
+
+        /* 3. Қорғаныс картасы (Үстіндегі) - ШЫНАЙЫ ЭФФЕКТ */
+        .card-defend { 
+            position: absolute !important; 
+            z-index: 10 !important; 
+            left: 0; top: 0;
+            
+            /* МАҢЫЗДЫ ЖЕРІ ОСЫНДА: */
+            /* translate3d(25px, 10px, 0) -> 25px оңға, 10px төмен жылжиды */
+            /* rotate(25deg) -> 25 градусқа қаттырақ бұрылады */
+            /* scale(0.65) -> Кішірейеді */
+            transform: translate3d(25px, 10px, 0) rotate(25deg) scale(0.65) !important; 
+            
+            box-shadow: 4px 5px 15px rgba(0,0,0,0.5) !important; 
+        }
+
 
 
         /* Батырмалар */
