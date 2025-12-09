@@ -137,20 +137,48 @@
         }
 
         /* Үстелдегі картаның өзін кішірейту (Scale) */
-        .table-pair .card {
-            /* Картаны 65% өлшемге дейін кішірейтеміз */
-            transform: scale(0.65) !important; 
-            transform-origin: top left !important; /* Сол жақ жоғарыдан бастап кішірейеді */
-            margin: 0 !important;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3) !important; /* Көлеңкесін азайтамыз */
-        }
+        /* 1. Слоттың (орынның) стилі */
+.table-pair {
+    position: relative; /* Карталар осы шеңбердің ішінде жүреді */
+    width: 60px !important; /* Енін сәл кеңірек алған дұрыс, қисайғанда сыйысу үшін */
+    height: 90px !important; 
+    margin: 5px 10px !important;
+    /* Көмекші шекара (тексеру үшін, кейін алып тастайсыз) */
+    /* border: 1px dashed rgba(255,255,255,0.2); */
+}
 
-        /* Қорғаныс картасын (2-ші картаны) әдемілеп қою */
-        .card-defend {
-            /* Сәл оңға және төмен жылжытып, қисайтамыз */
-            transform: translate3d(20px, 10px, 0) rotate(15deg) scale(0.65) !important;
-            z-index: 10 !important;
-        }
+/* 2. Барлық карталарға ортақ стиль */
+.table-pair .card {
+    position: absolute; /* ЕҢ МАҢЫЗДЫ ЖЕРІ: Бұл карталарды бірінің үстіне бірін қояды */
+    top: 0;
+    left: 0;
+    width: 100%; /* Слоттың өлшеміне бейімделеді */
+    height: 100%;
+    
+    /* Масштабтау */
+    transform: scale(0.65); 
+    transform-origin: top left; /* Сол жақ жоғарыдан бастап кішірейеді */
+    
+    box-shadow: -2px 2px 5px rgba(0,0,0,0.4) !important; /* Көлеңке */
+    transition: transform 0.3s ease; /* Әдемі қозғалыс үшін */
+}
+
+/* 3. Астыңғы (шабуыл) карта */
+/* Арнайы класс қосудың қажеті жоқ, ол .card стилімен орнында тұра береді */
+
+/* 4. Үстіңгі (қорғаныс) карта */
+.card-defend {
+    z-index: 10 !important; /* Міндетті түрде астыңғы картаның үстіне шығару */
+    
+    /* translate(X, Y): 
+       20px - оңға жылжиды (астыңғы картаның сол жағын көрсету үшін)
+       5px  - сәл төмен түседі
+       rotate(15deg) - қисаяды
+       scale(0.65) - өлшемін сақтаймыз
+    */
+    transform: translate(20px, 5px) rotate(15deg) scale(0.65) !important;
+}
+
 
 
         /* Батырмалар */
