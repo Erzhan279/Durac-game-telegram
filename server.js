@@ -219,7 +219,7 @@ io.on('connection', (socket) => {
         // A. МЕН ШАБУЫЛДАП ЖАТЫРМЫН
         if (game.attacker === 'player') {
             // Егер үстел бос болса немесе Подкидной ережесі сәйкес келсе
-            if (canToss(card) && game.table.length < 6) {
+            if (canToss(card) && game.table.length < 12) {
                 // Тағы бір шарт: Егер үстелде карта бар болса, соңғысы БОТТЫКІ (жабылған) болуы керек
                 let lastItem = game.table[game.table.length - 1];
                 if (!lastItem || lastItem.owner === 'bot') {
