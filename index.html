@@ -318,35 +318,65 @@
 
                 // C. Саусақ алынды (ТАСТАУ)
                                 // 3. Саусақ алынды (ТАСТАУ)
+                                // --- АНИМАЦИЯЛЫҚ ҰШУ (КӨШІРІП АЛ) ---
                 el.addEventListener('touchend', (e) => {
                     el.classList.remove('dragging');
-                    // Анимация қосамыз (орнына жұмсақ қайту үшін)
-                    el.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)';
-
+                    
                     if (isDragging) {
                         const touch = e.changedTouches[0];
                         const dropRect = dropZone.getBoundingClientRect();
 
-                        // Егер үстелге тасталса
+                        // Егер үстелге (drop zone) тисе
                         if (touch.clientY < dropRect.bottom && touch.clientY > dropRect.top) {
-                            // Серверге хабарлаймыз
-                            socket.emit('playCard', originalIndex);
                             
-                            // ⚠️ МАҢЫЗДЫ: КАРТАНЫ ЖАСЫРМАЙМЫЗ!
-                            // Біз оны орнына қайтара береміз.
-                            // Егер жүріс дұрыс болса, сервер 0.1 секундта жаңартып үлгереді.
+                            // 1. Серверге сигнал береміз
+                            socket.emit('playCard', originalIndex);
+
+                            // 2. 🔥 АНИМАЦИЯ ҮШІН КӨШІРМЕ ЖАСАЙМЫЗ 🔥
+                            // Себебі "updateState" келгенде түпнұсқа өшіп қалады.
+                            const flyingCard = el.cloneNode(true); 
+                            document.body.appendChild(flyingCard); // Экранға қосамыз
+
+                            // Көшірмені дәл сол қолда тұрған жеріне қоямыз
+                            flyingCard.style.position = 'fixed';
+                            flyingCard.style.left = el.style.left;
+                            flyingCard.style.top = el.style.top;
+                            flyingCard.style.margin = '0';
+                            flyingCard.style.zIndex = 9999;
+                            flyingCard.style.transform = 'scale(1.2)'; // Үлкен күйі
+                            flyingCard.style.transition = 'all 0.4s ease-out'; // Жұмсақ ұшу
+
+                            // Түпнұсқаны жасырамыз (көзге көрінбесін)
+                            el.style.opacity = 0;
+
+                            // 3. КЕЛЕСІ КАДРДА ҰШЫРАМЫЗ
+                            requestAnimationFrame(() => {
+                                // Үстелдің ортасын есептеу
+                                const centerX = dropRect.left + dropRect.width / 2 - 30; // 30 = жарты ені
+                                const centerY = dropRect.top + dropRect.height / 2 - 45; // 45 = жарты биіктігі
+
+                                // Сол жаққа ұшсын және кішірейсін!
+                                flyingCard.style.left = centerX + 'px';
+                                flyingCard.style.top = centerY + 'px';
+                                flyingCard.style.transform = 'scale(0.65) rotate(random(10deg))'; // КІШІРЕЮ
+                                flyingCard.style.opacity = 0.8; 
+                            });
+
+                            // 4. Анимация біткен соң көшірмені өшіреміз
+                            setTimeout(() => {
+                                flyingCard.remove();
+                            }, 400);
+
+                        } else {
+                            // Егер үстелге тимесе -> Орнына қайту
+                            el.style.transition = 'transform 0.3s';
+                            el.style.position = 'absolute';
+                            el.style.left = ''; el.style.top = '';
+                            el.style.margin = `0 ${step}px`; // Ығысуды сақтаймыз
+                            el.style.transform = baseTransform;
                         }
-                        
-                        // Қате болса да, дұрыс болса да -> Орнына қайту анимациясы
-                        // Бұл "Жоқ болып кету" қатесін түзейді
-                        el.style.position = 'absolute';
-                        el.style.left = '';
-                        el.style.top = '';
-                        el.style.margin = '0 -35px';
-                        el.style.transform = baseTransform; // Бастапқы орны
-                        
                     } else {
-                        // Жай ғана басу (Tap)
+                        // Жай басу (Tap)
                         if (el.classList.contains('active')) {
                             el.classList.remove('active');
                             el.style.transform = baseTransform;
@@ -356,11 +386,13 @@
                                 c.style.transform = c.dataset.baseTransform;
                             });
                             el.classList.add('active');
-                            el.style.transform = `translate3d(${xOffset}px, ${yOffset - 40}px, 0) rotate(${angle}deg)`;
+                            // Сәл көтерілу
+                            el.style.transform = `translate3d(${xOffset}px, ${yOffset - 30}px, 0) rotate(${angle}deg)`;
                         }
                     }
                     isDragging = false;
                 });
+
 
             }
             return el;
