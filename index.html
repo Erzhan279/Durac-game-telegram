@@ -125,9 +125,32 @@
         }
 
         /* Үстелдегі жұптар (Шабуыл және Қорғаныс) */
-        .table-pair { position: relative; width: 90px; height: 130px; margin: 10px 15px; }
-        .card-attack { position: absolute !important; transform: rotate(-3deg) !important; z-index: 1; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-        .card-defend { position: absolute !important; z-index: 5; transform: translate3d(25px, 15px, 0) rotate(15deg) !important; box-shadow: 2px 8px 20px rgba(0,0,0,0.5); }
+                /* --- ҮСТЕЛДЕГІ ЖҰПТАРДЫ КІШІРЕЙТУ --- */
+        .table-pair { 
+            position: relative; 
+            width: 60px;   /* 90px емес, 60px қыламыз */
+            height: 90px;  /* 130px емес, 90px қыламыз */
+            margin: 5px 10px; /* Арақашықтықты азайтамыз */
+        }
+
+        /* Шабуыл картасы (Астындағы) */
+        .card-attack { 
+            position: absolute !important; 
+            transform: rotate(-3deg) !important; 
+            z-index: 1; 
+            left: 0; top: 0; /* Дәлдеп қою */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3); 
+        }
+
+        /* Қорғаныс картасы (Үстіндегі) */
+        .card-defend { 
+            position: absolute !important; 
+            z-index: 5; 
+            /* Сәл ғана жылжытамыз (кішкентай карта үшін 25px көп) */
+            transform: translate3d(15px, 10px, 0) rotate(15deg) !important; 
+            box-shadow: 2px 5px 10px rgba(0,0,0,0.5); 
+            left: 0; top: 0;
+        }
 
         /* Батырмалар */
         .controls { z-index: 1000; margin-bottom: 25px; display: flex; gap: 15px; }
