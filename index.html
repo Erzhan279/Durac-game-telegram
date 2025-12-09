@@ -236,8 +236,32 @@
             }
 
             // --- 2. СҮЙРЕУ ЛОГИКАСЫ (МЫҚТЫ НҰСҚА) ---
-            if (isHand && isFaceUp) {
+                        if (isHand && isFaceUp) {
                 el.classList.add('my-card');
+                
+                // 1. ЫҒЫСУ ЛОГИКАСЫ (SQUEEZE)
+                // Карталардың арақашықтығын (step) есептейміз
+                let step = 45; // Стандартты аралық
+                
+                if (total > 5) step = 35; // 6 карта болса қысылады
+                if (total > 8) step = 25; // 9+ карта болса қатты қысылады
+
+                // 2. ЖЕЛПУІШ (ВЕЕР) ЛОГИКАСЫ
+                const center = (total - 1) / 2; // Ортасын табу
+                const angle = (index - center) * 5; // Бұрыш (әр карта 5 градусқа қисаяды)
+                const yOffset = Math.abs(index - center) * 10; // Доға (шеттері төмен түседі)
+                const xOffset = (index - center) * step; // Есептелген "қысылған" аралық
+                
+                // 3. ҚОЛДАНУ
+                const baseTransform = `translate3d(${xOffset}px, ${yOffset}px, 0) rotate(${angle}deg)`;
+                
+                el.style.transform = baseTransform;
+                el.style.zIndex = index + 10;
+                el.dataset.baseTransform = baseTransform; // Сүйреу үшін есте сақтау
+
+                // ... (Ары қарай сенің сүйреу (touchstart) кодың жалғаса береді) ...
+
+             
                 
                 // Веер координаттары (Бастапқы орын)
                 const center = (total - 1) / 2;
