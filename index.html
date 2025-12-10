@@ -142,10 +142,19 @@
 </head>
 <body>
 
+        <div id="status-pill">...</div>
+
     <div id="bot-area">
-        <div class="card card-back" id="deck-count">36</div>
-        <div id="trump-placeholder"></div>
-        <div id="bot-hand" style="position: relative; width: 100%; height: 100%; display: flex; justify-content: center;"></div>
+        
+        <div id="deck-area">
+            <div id="trump-card-container"></div> <div id="deck-pile" class="card card-back" style="display: none;">
+                <div class="deck-counter" id="deck-counter-text">36</div>
+            </div>
+        </div>
+
+        <div id="bot-hand"></div>
+    </div>
+
 
 
     <div id="status-pill">...</div>
