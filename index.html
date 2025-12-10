@@ -191,6 +191,20 @@
 
         #deck-count { position: absolute; left: 15px; font-size: 22px; color: white; text-shadow: 1px 1px 2px black; z-index: 2; display: flex; justify-content: center; align-items: center;}
         #trump-placeholder { position: absolute; left: 30px; z-index: 0; filter: brightness(0.7); }
+                /* --- КӘСІБИ ҰШУ АНИМАЦИЯСЫ --- */
+        .flying-card {
+            position: fixed !important;
+            z-index: 9999 !important;
+            /* Expo ease-out: өте шынайы, жылдам лақтыру эффектісі */
+            transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1) !important;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.5) !important; /* Ауадағы көлеңке */
+        }
+        
+        /* Үстелге қонған кездегі түрі */
+        .landed-card {
+            transform: scale(0.65) rotate(random(5deg)) !important; /* Кішірейеді */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3) !important; /* Көлеңке азаяды */
+        }
 
     </style>
 </head>
