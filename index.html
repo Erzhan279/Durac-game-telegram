@@ -217,14 +217,15 @@
                 /* --- PRO ҚАЙТАРУ ЖӘНЕ ҚАТЕ ЭФФЕКТІСІ --- */
 
         /* 1. Қайтып келе жатқан карта (Серіппелі анимация) */
-        .returning-card {
+                .returning-card {
             position: fixed !important;
             z-index: 9999 !important;
-            /* Жылдам басталып, соңында жұмсақ қонады */
-            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+            /* Баяу және әдемі ұшу үшін (0.6 секунд) */
+            transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), left 0.6s cubic-bezier(0.25, 1, 0.5, 1), top 0.6s cubic-bezier(0.25, 1, 0.5, 1) !important;
             pointer-events: none;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3) !important;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4) !important;
         }
+
 
         /* 2. Қате болғандағы "Жарылыс" эффектісі */
         @keyframes flashRed {
