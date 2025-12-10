@@ -268,8 +268,12 @@
         <div id="my-hand"></div>
     </div>
 
-        <script>
+            <script>
         const socket = io();
+        
+        // 🔥 ЕҢ МАҢЫЗДЫ АЙНЫМАЛЫ (Картаны есте сақтау үшін)
+        let lastPlayedCardElement = null;
+
         const myHandDiv = document.getElementById('my-hand');
         const botHandDiv = document.getElementById('bot-hand');
         const tableContainer = document.getElementById('cards-on-table');
@@ -278,17 +282,15 @@
         const statusPill = document.getElementById('status-pill');
         const deckCountDiv = document.getElementById('deck-count');
 
-        // Соңғы жүрген картаны есте сақтау (Жасырмаймыз, жай сақтаймыз)
-        let lastPlayedCardElement = null;
-
+        // 1. КАРТАНЫҢ HTML КӨРІНІСІ
         function createCardHTML(card) {
-            if (!card) return '';
             const isRed = (card.suit === '♥' || card.suit === '♦');
-            const cls = isRed ? 'red' : 'black';
+            const colorClass = isRed ? 'red' : 'black';
+            const suitIcons = {'♥':'♥', '♦':'♦', '♣':'♣', '♠':'♠'};
             return `
-                <div class="val-top ${cls}">${card.value}<br>${card.suit}</div>
-                <div class="suit-big ${cls}">${card.suit}</div>
-                <div class="val-bot ${cls}">${card.value}<br>${card.suit}</div>
+                <div class="val-top ${colorClass}">${card.value}<br>${suitIcons[card.suit]}</div>
+                <div class="suit-big ${colorClass}">${suitIcons[card.suit]}</div>
+                <div class="val-bot ${colorClass}">${card.value}<br>${suitIcons[card.suit]}</div>
             `;
         }
 
@@ -300,73 +302,75 @@
                 el.classList.add('card-back');
                 if(!isHand) {
                     el.style.margin = '0 -35px';
-                    el.style.transform = `translate3d(0, ${-index*2}px, 0)`;
+                    el.style.transform = `translate3d(0, ${-index*1.5}px, 0)`;
                 }
             } else {
                 el.innerHTML = createCardHTML(card);
             }
 
-            if (!isHand && isFaceUp) {
-                el.classList.add('small-card');
-            }
+            if (!isHand && isFaceUp) el.classList.add('small-card');
 
+            // --- 2. ҚОЛДАҒЫ КАРТА (СҮЙРЕУ ЖӘНЕ ЖЕЛПУІШ) ---
             if (isHand && isFaceUp) {
                 el.classList.add('my-card');
                 
-                // --- ЖЕЛПУІШ (FAN) ЕСЕБІ ---
+                // A. ЖЕЛПУІШ ЕСЕБІ (SQUEEZE)
                 const screenWidth = window.innerWidth;
                 const maxHandWidth = screenWidth - 40; 
                 const cardWidth = 90; 
-                let step = 40; 
+                let step = 45; 
                 const totalWidthIfNeeded = cardWidth + (total - 1) * step;
+                
                 if (totalWidthIfNeeded > maxHandWidth) {
                     step = (maxHandWidth - cardWidth) / (total - 1);
                 }
 
                 const center = (total - 1) / 2;
-                const angle = (index - center) * 4; 
-                const yOffset = Math.abs(index - center) * (step / 3); 
+                const angle = (index - center) * 5; 
+                const yOffset = Math.abs(index - center) * 10; 
                 const xOffset = (index - center) * step;
                 
-                // Бастапқы орынды сақтаймыз
+                // Бастапқы орнын есте сақтаймыз
                 const baseTransform = `translate3d(${xOffset}px, ${yOffset}px, 0) rotate(${angle}deg)`;
                 
                 el.style.transform = baseTransform;
                 el.style.zIndex = index + 10;
                 el.dataset.baseTransform = baseTransform; 
 
-                // --- СҮЙРЕУ ЛОГИКАСЫ ---
+                // B. СҮЙРЕУ (TOUCH EVENTS)
                 let startX, startY;
                 let isDragging = false;
-                
+                let shiftX, shiftY;
+
                 el.addEventListener('touchstart', (e) => {
                     const touch = e.touches[0];
                     const rect = el.getBoundingClientRect();
-                    startX = touch.clientX;
-                    startY = touch.clientY;
-                    el.dataset.shiftX = startX - rect.left;
-                    el.dataset.shiftY = startY - rect.top;
+                    shiftX = touch.clientX - rect.left;
+                    shiftY = touch.clientY - rect.top;
                     el.style.transition = 'none'; // Сүйрегенде анимацияны өшіреміз
+                    isDragging = false; 
                 }, {passive: false});
 
                 el.addEventListener('touchmove', (e) => {
                     const touch = e.touches[0];
-                    const dx = touch.clientX - startX;
-                    const dy = touch.clientY - startY;
-                    
-                    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
-                        e.preventDefault();
+                    // 5 пиксельден артық қозғалса ғана сүйреу басталады
+                    if (!isDragging) {
                         isDragging = true;
                         el.classList.add('dragging');
-                        el.style.position = 'fixed';
-                        el.style.transform = 'scale(1.1)'; // Сәл үлкейеді
+                        el.style.position = 'fixed'; 
+                        el.style.transform = 'scale(1.2)'; 
                         el.style.zIndex = 9999;
                         el.style.margin = '0';
-                        el.style.left = (touch.clientX - el.dataset.shiftX) + 'px';
-                        el.style.top = (touch.clientY - el.dataset.shiftY) + 'px';
+                    }
+                    
+                    if (isDragging) {
+                        e.preventDefault(); 
+                        el.style.left = (touch.clientX - shiftX) + 'px';
+                        el.style.top = (touch.clientY - shiftY) + 'px';
                     }
                 }, {passive: false});
 
+                // C. САУСАҚТЫ АЛУ (ТАСТАУ)
                 el.addEventListener('touchend', (e) => {
                     el.classList.remove('dragging');
                     
@@ -374,32 +378,31 @@
                         const touch = e.changedTouches[0];
                         const dropRect = dropZone.getBoundingClientRect();
 
-                        // Егер үстелге тасталса
+                        // Егер үстелге түссе
                         if (touch.clientY < dropRect.bottom && touch.clientY > dropRect.top) {
                             
-                            // 1. КАРТАНЫ ҮСТЕЛГЕ "ЖАБЫСТЫРАМЫЗ" (КӨРІНІП ТҰРАДЫ)
+                            // 1. АНИМАЦИЯМЕН ОРТАҒА БАРАДЫ (Жоғалмайды!)
                             const centerX = dropRect.left + dropRect.width/2 - 45;
                             const centerY = dropRect.top + dropRect.height/2 - 67.5;
                             const randomAngle = Math.floor(Math.random() * 20) - 10;
 
-                            // Анимациямен ортаға қоямыз
                             el.style.transition = 'all 0.3s ease-out';
                             el.style.left = centerX + 'px';
                             el.style.top = centerY + 'px';
                             el.style.transform = `scale(0.65) rotate(${randomAngle}deg)`;
                             
-                            // Есте сақтаймыз (Қате болса қайтару үшін)
+                            // 2. Есте сақтаймыз (Қате болса қайтару үшін)
                             lastPlayedCardElement = el;
 
-                            // 2. Серверге сигнал береміз
+                            // 3. Серверге жібереміз
                             socket.emit('playCard', originalIndex);
-                            
+
                         } else {
-                            // Егер далаға лақтырса -> Орнына қайту
+                            // Далаға лақтырса -> Орнына қайту
                             returnToHand(el);
                         }
                     } else {
-                        // Жай басу (Tap) - сәл көтерілу
+                        // Жай басу (Tap) - Сәл көтерілу
                         if (el.classList.contains('active')) {
                             el.classList.remove('active');
                             el.style.transition = 'transform 0.3s';
@@ -412,8 +415,6 @@
                             });
                             el.classList.add('active');
                             el.style.transition = 'transform 0.3s';
-                            // baseTransform ішінен Y-ты өзгерту қиын болғандықтан, жай ғана transform-ды қайта жазамыз
-                            // (Қарапайым болу үшін rotate қалдырып, Y көтереміз)
                             el.style.transform = baseTransform + ' translateY(-30px)';
                         }
                     }
@@ -423,16 +424,12 @@
             return el;
         }
 
-        // Көмекші функция: Картаны орнына қайтару
+        // --- 3. КАРТАНЫ ҚОЛҒА ҚАЙТАРУ ФУНКЦИЯСЫ ---
         function returnToHand(el) {
-            // 1. Анимация қосамыз
+            // Анимацияны қосамыз
             el.style.transition = 'all 0.5s cubic-bezier(0.25, 1, 0.5, 1)';
             
-            // 2. Бұл карта absolute болуы керек, бірақ қазір fixed болып тұр.
-            // Біз оны fixed күйінде "көздеген жерге" ұшырамыз.
-            
-            // Қайда бару керек? Оны білу үшін "елестетеміз"
-            // Уақытша клон жасап, орнын өлшейміз
+            // "Елес" арқылы картаның қолдағы нақты орнын табамыз
             const ghost = el.cloneNode(true);
             ghost.style.visibility = 'hidden';
             ghost.style.position = 'absolute';
@@ -440,106 +437,112 @@
             ghost.style.left = ''; 
             ghost.style.top = '';
             ghost.style.margin = '';
-            myHandDiv.appendChild(ghost);
             
+            // Уақытша қолға қосып өлшейміз
+            myHandDiv.appendChild(ghost);
             const destRect = ghost.getBoundingClientRect();
-            ghost.remove(); // Өлшеп болдық, өшіреміз
+            ghost.remove(); 
 
-            // 3. ҰШАМЫЗ!
+            // ҚОЛҒА ҚАРАЙ ҰШЫРАМЫЗ
             el.style.left = destRect.left + 'px';
             el.style.top = destRect.top + 'px';
+            
             // Бұрылуды қалпына келтіру
             const rotation = el.dataset.baseTransform.match(/rotate\([^)]+\)/);
             el.style.transform = `scale(1) ${rotation ? rotation[0] : 'rotate(0deg)'}`;
 
-            // 4. Жеткен соң -> position: absolute қылып бекітеміз
+            // Жеткен соң бекітеміз
             setTimeout(() => {
-                el.style.transition = ''; // Анимацияны тазалау
+                el.style.transition = ''; 
                 el.style.position = 'absolute';
                 el.style.left = ''; 
                 el.style.top = '';
                 el.style.margin = '';
                 el.style.transform = el.dataset.baseTransform;
                 
-                // Қызарып дірілдеу (Қате болса)
+                // Егер бұл "қате жүріс" болса -> Қызарып жанады
                 if (el.classList.contains('invalid-trigger')) {
                     el.classList.remove('invalid-trigger');
-                    el.classList.add('error-flash');
+                    el.classList.add('error-flash'); // CSS-те бұл класс болуы керек
                     setTimeout(() => el.classList.remove('error-flash'), 500);
                 }
             }, 500);
         }
 
-        // --- 🔥 ҚАТЕ ЖҮРІС БОЛҒАНДА 🔥 ---
+        // --- 🔥 4. СЕРВЕРДЕН "ҚАТЕ ЖҮРІС" КЕЛСЕ 🔥 ---
         socket.on('invalidMove', () => {
-            console.log("Сервер: Invalid Move!");
+            console.log("Сервер: Қате жүріс! Қайтарып жатырмын...");
             if (lastPlayedCardElement) {
-                // Арнайы белгі қоямыз (жеткенде қызару үшін)
                 lastPlayedCardElement.classList.add('invalid-trigger');
-                // Орнына қайтарамыз
                 returnToHand(lastPlayedCardElement);
                 lastPlayedCardElement = null;
             }
         });
 
         socket.on('updateState', (state) => {
-            // Егер жаңарту келсе, ескі "lastPlayedCardElement" енді жарамсыз
+            // Жаңа жүріс келсе, ескіні ұмытамыз
             lastPlayedCardElement = null;
 
-            if(state.winner) {
-                statusPill.innerText = state.winner === 'player' ? "ЖЕҢІС!" : "ЖЕҢІЛІС";
-                statusPill.style.display = 'block';
-            } else if(state.attacker === 'player') {
-                statusPill.innerText = "Сенің кезегің";
-                statusPill.style.display = 'block';
-            } else {
-                statusPill.style.display = 'none';
-            }
+            if(state.winner) updateStatus(state.winner === 'player' ? "🎉 ЖЕҢІС!" : "💀 ЖЕҢІЛІС", state.winner === 'player' ? 'gold' : 'red');
+            else if(state.attacker === 'player') updateStatus("Сенің кезегің", "#4cd137");
+            else updateStatus("Күту...", "#bbb");
 
-            // СҰРЫПТАУ
-            const sortedHand = state.playerHand.map((card, idx) => ({...card, originalIndex: idx})).sort((a,b) => {
-                 const isATrump = a.suit === state.trumpCard.suit;
-                 const isBTrump = b.suit === state.trumpCard.suit;
-                 const power = {'6':6, '7':7, '8':8, '9':9, '10':10, 'J':11, 'Q':12, 'K':13, 'A':14};
-                 
-                 if (isATrump && !isBTrump) return 1;
-                 if (!isATrump && isBTrump) return -1;
-                 if (a.suit === b.suit) return power[a.value] - power[b.value];
-                 return a.suit.localeCompare(b.suit);
-            });
+            const sortedHand = state.playerHand.map((card, idx) => ({...card, originalIndex: idx}))
+                .sort((a, b) => {
+                    const isATrump = a.suit === state.trumpCard.suit;
+                    const isBTrump = b.suit === state.trumpCard.suit;
+                    const power = {'6':6, '7':7, '8':8, '9':9, '10':10, 'J':11, 'Q':12, 'K':13, 'A':14};
+                    if (isATrump && !isBTrump) return 1;
+                    if (!isATrump && isBTrump) return -1;
+                    if (a.suit === b.suit) return power[a.value] - power[b.value];
+                    return a.suit.localeCompare(b.suit);
+                });
 
             myHandDiv.innerHTML = '';
-            sortedHand.forEach((c, i) => myHandDiv.appendChild(createCard(c, true, i, sortedHand.length, true, c.originalIndex)));
+            sortedHand.forEach((c, i) => {
+                myHandDiv.appendChild(createCard(c, true, i, sortedHand.length, true, c.originalIndex));
+            });
 
             botHandDiv.innerHTML = '';
             for(let i=0; i<state.botCardCount; i++) botHandDiv.appendChild(createCard(null, false, i));
 
             tableContainer.innerHTML = '';
-            state.table.forEach(pair => {
-                const div = document.createElement('div');
-                div.className = 'table-pair'; 
-                const c1 = createCard(pair.attack, true, 0,0,false);
-                c1.classList.add('card-attack'); 
-                div.appendChild(c1);
-                if(pair.defend) {
-                    const c2 = createCard(pair.defend, true, 0,0,false);
-                    c2.classList.add('card-defend'); 
-                    div.appendChild(c2);
+            for (let i = 0; i < state.table.length; i += 2) {
+                const pairDiv = document.createElement('div');
+                pairDiv.className = 'table-pair';
+                
+                const attackCard = state.table[i].card;
+                const attackEl = createCard(attackCard, true, 0,0,false);
+                attackEl.classList.add('card-attack'); 
+                pairDiv.appendChild(attackEl);
+
+                if (state.table[i+1]) {
+                    const defendCard = state.table[i+1].card;
+                    const defendEl = createCard(defendCard, true, 0,0,false);
+                    defendEl.classList.add('card-defend'); 
+                    pairDiv.appendChild(defendEl);
                 }
-                tableContainer.appendChild(div);
-            });
+                tableContainer.appendChild(pairDiv);
+            }
 
             trumpDiv.innerHTML = '';
             if (state.trumpCard) {
-                const t = createCard(state.trumpCard, true, 0,0,false);
-                t.style.transform = 'rotate(90deg) translateX(30px)';
-                t.style.zIndex = -1;
-                trumpDiv.appendChild(t);
+                const tCard = createCard(state.trumpCard, true, 0,0,false);
+                tCard.style.transform = 'rotate(90deg) translate3d(30px, 0, 0)';
+                tCard.style.zIndex = -1;
+                trumpDiv.appendChild(tCard);
             }
             deckCountDiv.innerText = state.deckCount || "";
-            if(state.deckCount === 0) deckCountDiv.style.opacity = 0;
+            deckCountDiv.style.opacity = state.deckCount > 0 ? 1 : 0;
         });
+
+        function updateStatus(text, color) {
+            statusPill.innerText = text;
+            statusPill.style.color = color;
+            statusPill.style.display = 'block';
+        }
     </script>
+
 
 </body>
 </html>
