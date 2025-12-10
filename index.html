@@ -214,11 +214,31 @@
             100% { transform: translateX(0); }
         }
 
-        .error-card {
-            animation: errorShake 0.4s ease-in-out;
-            box-shadow: 0 0 20px red !important; /* Қызыл сәуле */
-            border: 2px solid red !important;
+                /* --- PRO ҚАЙТАРУ ЖӘНЕ ҚАТЕ ЭФФЕКТІСІ --- */
+
+        /* 1. Қайтып келе жатқан карта (Серіппелі анимация) */
+        .returning-card {
+            position: fixed !important;
+            z-index: 9999 !important;
+            /* Жылдам басталып, соңында жұмсақ қонады */
+            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+            pointer-events: none;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3) !important;
         }
+
+        /* 2. Қате болғандағы "Жарылыс" эффектісі */
+        @keyframes flashRed {
+            0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); border-color: red; transform: scale(1); }
+            50% { box-shadow: 0 0 30px 10px rgba(255, 0, 0, 0); border-color: red; transform: scale(1.05); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); border-color: #ccc; transform: scale(1); }
+        }
+
+        .error-flash {
+            animation: flashRed 0.5s ease-out;
+            border: 2px solid red !important;
+            z-index: 100 !important; /* Көрші карталардан биік тұрады */
+        }
+
 
 
     </style>
@@ -516,66 +536,71 @@
                 console.log("Қап! lastHiddenCard бос болып тұр!");
             }
         });
-                // --- 🔥 КАРТАНЫ ҚАЙТАРУ АНИМАЦИЯСЫ 🔥 ---
+                // --- 🔥 PRO ДӘЛДІКПЕН ҚАЙТАРУ 🔥 ---
         socket.on('invalidMove', () => {
-            console.log("Қате жүріс! Карта қайтарылуда...");
-
-            // Егер жасырылған карта болмаса, ештеңе істемейміз
             if (!lastHiddenCard) return;
 
-            // 1. ҚАЙДА ҚАЙТУ КЕРЕК? (Қолдағы картаның орнын аламыз)
+            // 1. БАСТАПҚЫ НҮКТЕ (Үстелдің ортасы)
+            // Карта үстелде кішірейіп (scale 0.65) тұрған еді, сол өлшеммен бастаймыз
+            const dropRect = document.getElementById('drop-zone').getBoundingClientRect();
+            // Үстелдің дәл ортасын табамыз
+            const startX = dropRect.left + (dropRect.width / 2) - 30; // 30 = 60px/2 (кіші картаның жартысы)
+            const startY = dropRect.top + (dropRect.height / 2) - 45; // 45 = 90px/2
+
+            // 2. СОҢҒЫ НҮКТЕ (Қолдағы бос орын)
+            // lastHiddenCard - бұл қолдағы көрінбей тұрған түпнұсқа
             const handRect = lastHiddenCard.getBoundingClientRect();
 
-            // 2. ҚАЙДАН ҰШУ КЕРЕК? (Үстелдің ортасынан)
-            const dropRect = document.getElementById('drop-zone').getBoundingClientRect();
-            const startX = dropRect.left + dropRect.width / 2 - 45; // Ортасы
-            const startY = dropRect.top + dropRect.height / 2 - 60;
-
-            // 3. ҰШАТЫН КЛОН ЖАСАЙМЫЗ
+            // 3. КЛОН ЖАСАУ
             const returner = lastHiddenCard.cloneNode(true);
+            returner.className = 'card returning-card'; // Жаңа стильді береміз
+            returner.innerHTML = lastHiddenCard.innerHTML;
             
-            // Клонның параметрлерін түзетеміз (Үстелдегідей кішкентай болу керек)
-            returner.className = 'card'; // Артық кластарды алып тастаймыз
-            returner.innerHTML = lastHiddenCard.innerHTML; // Суретін саламыз
-            
-            returner.style.position = 'fixed';
-            returner.style.zIndex = '9999';
+            // Бастапқы позицияға қоямыз
             returner.style.left = startX + 'px';
             returner.style.top = startY + 'px';
-            returner.style.width = '90px';
+            returner.style.width = '90px'; // Қолдағы өлшемге дайындаймыз
             returner.style.height = '135px';
             returner.style.margin = '0';
-            returner.style.transform = 'scale(0.65)'; // Үстелде кішкентай боп тұрды ғой
-            // Кері ұшу анимациясы (Жұмсақ)
-            returner.style.transition = 'all 0.5s cubic-bezier(0.25, 1, 0.5, 1)';
+            returner.style.transform = 'scale(0.65)'; // Үстелдегідей кішкентай болып бастайды
 
             document.body.appendChild(returner);
 
-            // 4. ҰШЫРАМЫЗ (Келесі кадрда)
+            // 4. ҰШЫРУ (Келесі кадрда)
             requestAnimationFrame(() => {
+                // Қолдағы орнына дәлдейміз
                 returner.style.left = handRect.left + 'px';
                 returner.style.top = handRect.top + 'px';
-                // Қолдағы бұрылуын (желпуішті) қайтарамыз
-                returner.style.transform = lastHiddenCard.dataset.baseTransform || 'scale(1)';
+                
+                // Ең маңызды жері: Клон үлкейіп (scale 1), қолдағыдай бұрылуы керек
+                // Біз қолдағы картаның transform-ын көшіріп аламыз, бірақ translate бөлігінсіз
+                // Себебі біз left/top арқылы жылжытып қойдық.
+                
+                // Қарапайым шешім: Қолдағы картаның бұрылуын (rotation) ғана аламыз
+                const rotation = lastHiddenCard.dataset.baseTransform.match(/rotate\([^)]+\)/);
+                const rotateStr = rotation ? rotation[0] : 'rotate(0deg)';
+                
+                returner.style.transform = `scale(1) ${rotateStr}`;
             });
 
-            // 5. ЖЕТКЕН СОҢ (0.5 секундтан кейін)
+            // 5. ЖЕТКЕН СОҢ (0.6 секунд)
             setTimeout(() => {
-                returner.remove(); // Клонды өшіреміз
+                returner.remove(); // Клонды жоямыз
                 
-                // Шын картаны қайта көрсетеміз
-                lastHiddenCard.style.opacity = 1; 
+                // Түпнұсқаны жағамыз
+                lastHiddenCard.style.opacity = 1;
                 
-                // 🔴 ДІРІЛДЕТЕМІЗ (Қате екенін білдіру үшін)
-                lastHiddenCard.classList.add('error-card');
+                // 🔥 ҚЫЗАРЫП ЖАНУ ЭФФЕКТІСІ 🔥
+                lastHiddenCard.classList.add('error-flash');
 
-                // 0.5 секундтан соң қызылын өшіреміз
+                // Эффект біткен соң тазалаймыз
                 setTimeout(() => {
-                    if(lastHiddenCard) lastHiddenCard.classList.remove('error-card');
+                    if(lastHiddenCard) lastHiddenCard.classList.remove('error-flash');
                     lastHiddenCard = null;
                 }, 500);
-            }, 500);
+            }, 600); // Анимация уақытымен бірдей болу керек
         });
+
 
 
     </script>
