@@ -271,11 +271,14 @@
             <script>
         const socket = io();
         
-        // --- ГЛОБАЛДЫ АЙНЫМАЛЫЛАР ---
+        // --- МАҢЫЗДЫ АЙНЫМАЛЫЛАР ---
         let lastPlayedCardElement = null;
         
-        // 🔥 МУЛЬТИТАЧ ҚОРҒАНЫСЫ 🔥
-        // Бұл айнымалы қазір біреу карта сүйреп жатыр ма, соны тексереді
+        // 🔥 БАҒДАРШАМ (LOCK) 🔥
+        // Егер true болса, ешқандай картаны ұстай алмайсың (Серверді күтеміз)
+        let isWaitingForServer = false;
+
+        // Мультитач қорғанысы
         let isGlobalDragging = false;
 
         const myHandDiv = document.getElementById('my-hand');
@@ -334,8 +337,9 @@
                 const baseTransform = `translate3d(${xOffset}px, ${yOffset}px, 0) rotate(${angle}deg)`;
                 
                 el.style.transform = baseTransform;
-                el.style.zIndex = index + 10;
+                el.style.zIndex = index + 10; // Қалыпты қабат
                 el.dataset.baseTransform = baseTransform; 
+                el.dataset.originalZIndex = index + 10; // Есте сақтаймыз
 
                 // --- СҮЙРЕУ ЛОГИКАСЫ ---
                 let startX, startY;
@@ -343,9 +347,10 @@
                 let shiftX, shiftY;
 
                 el.addEventListener('touchstart', (e) => {
-                    // 🛑 1. ЕГЕР ЕКІНШІ САУСАҚ БОЛСА -> ТОҚТАТАМЫЗ
+                    // 🛑 БАҒДАРШАМ: Егер серверді күтіп жатсақ -> ТОҚТА!
+                    if (isWaitingForServer) return;
+                    
                     if (e.touches.length > 1) return;
-                    // 🛑 2. ЕГЕР БАСҚА КАРТА СҮЙРЕЛІП ЖАТСА -> ТОҚТАТАМЫЗ
                     if (isGlobalDragging) return;
 
                     const touch = e.touches[0];
@@ -358,19 +363,19 @@
                 }, {passive: false});
 
                 el.addEventListener('touchmove', (e) => {
-                    // 🛑 ЕГЕР КЕНЕТТЕН ЕКІНШІ САУСАҚ ҚОСЫЛСА -> БҰҒАТТАЙМЫЗ
+                    if (isWaitingForServer) return; // Қосымша қорғаныс
                     if (e.touches.length > 1) return;
 
                     const touch = e.touches[0];
                     
                     if (!isDragging) {
                         isDragging = true;
-                        isGlobalDragging = true; // Глобалды құлыптау
+                        isGlobalDragging = true; 
                         
                         el.classList.add('dragging');
                         el.style.position = 'fixed'; 
                         el.style.transform = 'scale(1.2)'; 
-                        el.style.zIndex = 9999;
+                        el.style.zIndex = 9999; // Сүйрегенде ең үстінде
                         el.style.margin = '0';
                     }
                     
@@ -382,7 +387,6 @@
                 }, {passive: false});
 
                 el.addEventListener('touchend', (e) => {
-                    // 🔓 Құлыпты ашамыз
                     isGlobalDragging = false;
                     el.classList.remove('dragging');
                     
@@ -392,6 +396,9 @@
 
                         if (touch.clientY < dropRect.bottom && touch.clientY > dropRect.top) {
                             
+                            // 🔥 БҰҒАТТАУ! (Бағдаршам ҚЫЗЫЛ)
+                            isWaitingForServer = true;
+
                             // Ортаға қою
                             const centerX = dropRect.left + dropRect.width/2 - 45;
                             const centerY = dropRect.top + dropRect.height/2 - 67.5;
@@ -415,34 +422,42 @@
                             el.classList.remove('active');
                             el.style.transition = 'transform 0.3s';
                             el.style.transform = baseTransform;
+                            el.style.zIndex = el.dataset.originalZIndex; // Z-Index қалпына келтіру
                         } else {
                             document.querySelectorAll('.my-card').forEach(c => {
                                 c.classList.remove('active');
                                 c.style.transition = 'transform 0.3s';
                                 c.style.transform = c.dataset.baseTransform;
+                                c.style.zIndex = c.dataset.originalZIndex;
                             });
                             el.classList.add('active');
                             el.style.transition = 'transform 0.3s';
                             el.style.transform = baseTransform + ' translateY(-30px)';
+                            el.style.zIndex = 100; // Таңдалған карта сәл жоғары
                         }
                     }
                     isDragging = false;
                 });
                 
-                // 🛑 ЕГЕР СҮЙРЕУ ҮЗІЛІП ҚАЛСА (МЫСАЛЫ, ТЕЛЕФОН ШЫРЫЛДАСА)
                 el.addEventListener('touchcancel', () => {
                     isGlobalDragging = false;
                     isDragging = false;
                     el.classList.remove('dragging');
-                    returnToHand(el); // Орнына қайтарамыз
+                    returnToHand(el);
                 });
             }
             return el;
         }
 
         function returnToHand(el) {
+            // Бұғатты ашамыз (себебі карта қайтып келді)
+            isWaitingForServer = false;
+
             el.style.transition = 'all 0.5s cubic-bezier(0.25, 1, 0.5, 1)';
             
+            // Z-Index-ті жоғары ұстап тұрамыз
+            el.style.zIndex = 9999;
+
             const ghost = el.cloneNode(true);
             ghost.style.visibility = 'hidden';
             ghost.style.position = 'absolute';
@@ -472,24 +487,42 @@
                 if (el.classList.contains('invalid-trigger')) {
                     el.classList.remove('invalid-trigger');
                     el.classList.add('error-flash');
-                    setTimeout(() => el.classList.remove('error-flash'), 500);
+                    
+                    // 🔥 Z-INDEX ТҮЗЕТУ 🔥
+                    // Қызыл жанып тұрғанда ең үстінде тұруы керек
+                    el.style.zIndex = 1000; 
+
+                    setTimeout(() => {
+                        el.classList.remove('error-flash');
+                        // Анимация біткен соң өз орнына (қабатына) түседі
+                        el.style.zIndex = el.dataset.originalZIndex;
+                    }, 500);
+                } else {
+                    el.style.zIndex = el.dataset.originalZIndex;
                 }
             }, 500);
         }
 
         socket.on('invalidMove', () => {
             console.log("Сервер: Қате жүріс!");
+            // Бұғатты бірден ашпаймыз, карта орнына келгенше күтеміз (returnToHand ішінде ашылады)
+            
             if (lastPlayedCardElement) {
                 lastPlayedCardElement.classList.add('invalid-trigger');
                 returnToHand(lastPlayedCardElement);
                 lastPlayedCardElement = null;
+            } else {
+                // Егер карта табылмаса, бұғатты ашу керек
+                isWaitingForServer = false;
             }
         });
 
         socket.on('updateState', (state) => {
             lastPlayedCardElement = null;
-            // Құлыпты ашамыз (сақтандыру)
             isGlobalDragging = false;
+            
+            // ✅ БҰҒАТТЫ АШАМЫЗ (Бағдаршам ЖАСЫЛ)
+            isWaitingForServer = false;
 
             if(state.winner) updateStatus(state.winner === 'player' ? "🎉 ЖЕҢІС!" : "💀 ЖЕҢІЛІС", state.winner === 'player' ? 'gold' : 'red');
             else if(state.attacker === 'player') updateStatus("Сенің кезегің", "#4cd137");
@@ -550,6 +583,7 @@
             statusPill.style.display = 'block';
         }
     </script>
+
 
 
 
