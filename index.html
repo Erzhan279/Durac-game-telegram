@@ -526,82 +526,87 @@
                 // --- ҚАТЕ ЖҮРІС БОЛСА, ҚАЙТАРУ ---
                 // --- 🔥 PRO ҚАЙТАРУ (КЕПІЛДІКПЕН) 🔥 ---
                 // --- 🔥 PRO АНИМАЦИЯ (КЕПІЛДІКПЕН ҰШУ) 🔥 ---
+                // --- 🔥 PRO ФИКС: КАРТАНЫ ДӘЛДЕП ҚАЙТАРУ 🔥 ---
         socket.on('invalidMove', () => {
             if (!lastHiddenCard) {
                 document.querySelectorAll('.my-card').forEach(c => c.style.opacity = '1');
                 return;
             }
 
-            // 1. КООРДИНАТТАР
-            const dropRect = document.getElementById('drop-zone').getBoundingClientRect();
+            // 1-ҚАДАМ: ЖАСЫРЫН КАРТАНЫ ОРНЫНА (ҚОЛҒА) ҚОЮ
+            // Қазір ол лақтырған жерде тұр. Біз оны ескі орнына (желпуішке) қайтарамыз.
+            // Бірақ ол әлі "көрінбей" (opacity: 0) тұра береді.
+            lastHiddenCard.style.position = 'absolute';
+            lastHiddenCard.style.left = ''; 
+            lastHiddenCard.style.top = '';
+            lastHiddenCard.style.margin = '';
+            // Ең маңызды жері: Оны бастапқы "baseTransform" координатына қоямыз
+            lastHiddenCard.style.transform = lastHiddenCard.dataset.baseTransform;
+            
+            // 2-ҚАДАМ: ЕНДІ ҒАНА НАҚТЫ ОРНЫН ЕСЕПТЕЙМІЗ
+            // Енді handRect картаның қолдағы нақты орнын көрсетеді
+            const handRect = lastHiddenCard.getBoundingClientRect();
+            
             // Үстелдің ортасы
+            const dropRect = document.getElementById('drop-zone').getBoundingClientRect();
             const startX = dropRect.left + (dropRect.width / 2) - 30; 
             const startY = dropRect.top + (dropRect.height / 2) - 45;
-            
-            // Қолдағы орны
-            const handRect = lastHiddenCard.getBoundingClientRect();
 
-            // 2. КЛОНДЫ ДАЙЫНДАУ
+            // 3-ҚАДАМ: КЛОНДЫ ҰШЫРУ
             const returner = lastHiddenCard.cloneNode(true);
-            returner.className = 'card returning-card'; // CSS қосамыз
+            returner.className = 'card returning-card'; // CSS стиль
             returner.innerHTML = lastHiddenCard.innerHTML;
             
-            // БАСТАПҚЫ ОРНЫ (Үстелде)
+            // Клон үстелдің ортасынан бастайды
+            returner.style.position = 'fixed';
+            returner.style.zIndex = '9999';
             returner.style.left = startX + 'px';
             returner.style.top = startY + 'px';
             returner.style.width = '90px';
             returner.style.height = '135px';
             returner.style.margin = '0';
             
-            // Басында анимацияны өшіріп қоямыз (бірден ортада пайда болу үшін)
-            returner.style.transition = 'none'; 
+            // Бастапқыда кішкентай (үстелдегідей)
             returner.style.transform = 'scale(0.65)'; 
+            returner.style.transition = 'none'; // Әзірге анимациясыз қоямыз
 
             document.body.appendChild(returner);
 
-            // Түпнұсқаны жасырамыз
-            lastHiddenCard.style.opacity = 0; 
-
-            // 3. ҰШЫРУ (Кішкентай үзілістен кейін)
-            // Браузер картаны үстелге қойып үлгеруі керек
+            // 4-ҚАДАМ: АНИМАЦИЯНЫ ҚОСУ
+            // Браузер картаны орналастырып үлгеруі үшін 20мс күтеміз
             setTimeout(() => {
-                // Енді анимацияны қосамыз
-                returner.style.transition = 'all 0.6s cubic-bezier(0.25, 1, 0.5, 1)';
+                // Енді "жұмсақ ұшуды" қосамыз
+                returner.style.transition = 'all 0.5s cubic-bezier(0.25, 1, 0.5, 1)';
                 
                 // Қолға қарай жылжытамыз
                 returner.style.left = handRect.left + 'px';
                 returner.style.top = handRect.top + 'px';
                 
-                // Бұрылуын (Rotate) қосамыз
+                // Қолдағы бұрылуын (Rotate) қосамыз
+                // Түпнұсқа қалай бұрылып тұрса, клон да солай бұрылуы керек
                 const rotation = lastHiddenCard.dataset.baseTransform ? lastHiddenCard.dataset.baseTransform.match(/rotate\([^)]+\)/) : null;
                 const rotateStr = rotation ? rotation[0] : 'rotate(0deg)';
-                returner.style.transform = `scale(1) ${rotateStr}`;
+                returner.style.transform = `scale(1) ${rotateStr}`; // Үлкейіп, бұрылады
                 
-            }, 50); // 50 миллисекунд кідіріс (Көзге көрінбейді, бірақ ұшуды іске қосады)
+            }, 20);
 
-            // 4. ФИНИШ (0.6 секундтан кейін)
+            // 5-ҚАДАМ: ЖЕТКЕН СОҢ АУЫСТЫРУ
             setTimeout(() => {
                 returner.remove(); // Клонды жоямыз
                 
-                // Барлық карталарды жағамыз (Сақтандыру)
-                document.querySelectorAll('.my-card').forEach(c => c.style.opacity = '1');
-
-                // Қызарып дірілдеу
+                // Түпнұсқаны жағамыз (Ол дәл сол жерде күтіп тұр)
                 if (lastHiddenCard) {
+                    lastHiddenCard.style.opacity = 1;
+                    
+                    // Қызарып дірілдеу
                     lastHiddenCard.classList.add('error-flash');
                     setTimeout(() => {
                         if(lastHiddenCard) lastHiddenCard.classList.remove('error-flash');
                         lastHiddenCard = null;
                     }, 500);
                 }
-            }, 650); // 600 + 50 кідіріс
+            }, 520); // 500мс (анимация) + 20мс (кідіріс)
         });
-
-
-
-
-
-
     </script>
 </body>
 </html>
