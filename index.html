@@ -484,6 +484,27 @@
             statusPill.style.color = color;
             statusPill.style.display = 'block';
         }
+                // --- ҚАТЕ ЖҮРІС БОЛСА, ҚАЙТАРУ ---
+        socket.on('invalidMove', () => {
+            console.log("Серверден сигнал келді: ҚАТЕ ЖҮРІС!"); // Тексеру үшін
+
+            if (lastHiddenCard) {
+                // 1. Жасырын картаны қайта көрсетеміз
+                lastHiddenCard.style.opacity = 1;
+                
+                // 2. Қызарып дірілдеу эффектісін қосамыз (CSS animation)
+                lastHiddenCard.classList.add('error-card'); // error-card классы CSS-те болуы керек
+
+                // 3. Тазалау
+                setTimeout(() => {
+                    if(lastHiddenCard) lastHiddenCard.classList.remove('error-card');
+                    lastHiddenCard = null;
+                }, 500);
+            } else {
+                console.log("Қап! lastHiddenCard бос болып тұр!");
+            }
+        });
+
     </script>
 </body>
 </html>
