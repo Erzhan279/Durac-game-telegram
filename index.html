@@ -240,6 +240,26 @@
             border: 2px solid red !important;
             z-index: 100 !important; /* Көрші карталардан биік тұрады */
         }
+        /* Боттың карталарына арналған стиль */
+.bot-card {
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.5); /* Көлеңкесі жоғары қарай */
+}
+
+/* Бот карта тастағандағы ұшу анимациясы */
+@keyframes flyFromBot {
+    from { 
+        transform: translate(0, -200px) scale(0.5); 
+        opacity: 0; 
+    }
+    to { 
+        opacity: 1; 
+    }
+}
+
+.animate-bot-play {
+    animation: flyFromBot 0.4s ease-out backwards;
+}
+
 
 
 
