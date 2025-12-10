@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Durak Pro Animation</title>
+    <title>Durak 3D Style</title>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <style>
-        /* --- 1. НЕГІЗГІ ФОН --- */
+        /* --- 1. ФОН ЖӘНЕ НЕГІЗГІ СТИЛЬ --- */
         body {
-            background: radial-gradient(circle at 50% 40%, #1b5e20 0%, #052207 100%);
+            /* Durak Online стиліндегі қою жасыл фон */
+            background: radial-gradient(circle at 50% 50%, #0d4610 0%, #051c06 100%);
             color: white;
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
@@ -20,61 +21,28 @@
             touch-action: none;
         }
 
-        /* --- 2. ЖОҒАРҒЫ АЙМАҚ --- */
+        /* --- 2. БОТ АЙМАҒЫ (ЖОҒАРЫ) --- */
         #bot-area {
             position: relative;
             width: 100%;
-            height: 130px;
+            height: 120px;
             z-index: 10;
         }
 
-        /* Боттың қолы */
+        /* Боттың қолы (Жоғарыда, жартылай жасырын) */
         #bot-hand {
             position: absolute;
-            top: -50px; 
+            top: -60px; /* Картаның астын көрсетпейміз */
             left: 50%;
             transform: translateX(-50%);
-            width: 260px;
+            width: 280px;
             height: 100%;
             display: flex;
             justify-content: center;
             align-items: flex-start;
         }
 
-        .bot-card {
-            width: 70px !important;
-            height: 105px !important;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5) !important;
-            transition: transform 0.3s ease-out;
-        }
-
-        /* --- 3. КОЛОДА МЕН КОЗЫРЬ --- */
-        #deck-container {
-            position: absolute;
-            top: 40px;
-            left: 45px;
-            width: 80px;
-            height: 100px;
-            z-index: 5;
-        }
-
-        #trump-card-el {
-            position: absolute;
-            left: -35px; top: 15px;
-            transform: rotate(90deg);
-            z-index: 0;
-            box-shadow: -2px 2px 5px rgba(0,0,0,0.3);
-        }
-
-        #deck-pile-el {
-            position: absolute; left: 0; top: 0; z-index: 10;
-        }
-        .deck-counter {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            font-size: 22px; font-weight: bold; color: white; text-shadow: 1px 1px 2px black;
-        }
-
-        /* --- 4. ҮСТЕЛ --- */
+        /* --- 3. ОРТАҢҒЫ АЙМАҚ (ҮСТЕЛ) --- */
         #table-area {
             flex: 1;
             position: relative;
@@ -82,7 +50,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 6;
+            z-index: 5;
         }
         #cards-on-table {
             position: relative;
@@ -95,51 +63,100 @@
         }
         #drop-zone { position: absolute; width: 100%; height: 100%; top: 0; left: 0; }
 
-        /* --- 5. МЕНІҢ АЙМАҒЫМ --- */
+        /* --- 4. МЕНІҢ АЙМАҒЫМ (ТӨМЕН) --- */
         #my-area {
-            height: 270px;
+            height: 280px;
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
             align-items: center;
-            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+            /* Төменгі жағы сәл қараяды */
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
             z-index: 20;
             padding-bottom: 10px;
         }
         #my-hand {
             position: relative;
             width: 100%;
-            height: 160px;
+            height: 180px;
             display: flex;
             justify-content: center;
             align-items: flex-end;
+            padding-bottom: 10px;
+        }
+
+        /* --- 5. ОҢ ЖАҚТАҒЫ БИТА (ЖАҢА) --- */
+        #discard-pile {
+            position: absolute;
+            right: -40px; /* Жартылай шығып тұрады */
+            top: 45%;
+            width: 100px;
+            height: 140px;
+            transform: translateY(-50%) rotate(-15deg);
+            z-index: 1;
+            background: rgba(0,0,0,0.2); /* Орны көрініп тұру үшін */
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        /* Битаға жиналған карталардың бейнесі */
+        .discarded-card {
+            position: absolute;
+            width: 70px; height: 105px;
+            background: repeating-linear-gradient(45deg, #b00, #b00 5px, #fff 5px, #fff 6px);
+            border: 2px solid white;
+            border-radius: 6px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+        }
+
+        /* --- 6. СОЛ ЖАҚТАҒЫ КОЛОДА --- */
+        #deck-container {
+            position: absolute;
+            top: 30px;
+            left: 40px;
+            width: 80px;
+            height: 100px;
+            z-index: 5;
+        }
+        #trump-card-el {
+            position: absolute;
+            left: -30px; top: 10px;
+            transform: rotate(90deg);
+            z-index: 0;
+            box-shadow: -2px 2px 5px rgba(0,0,0,0.3);
+        }
+        #deck-pile-el {
+            position: absolute; left: 0; top: 0; z-index: 10;
+        }
+        .deck-counter {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 20px; font-weight: bold; color: white; text-shadow: 1px 1px 2px black;
         }
 
         /* --- КАРТА СТИЛІ --- */
         .card {
-            width: 90px; height: 135px;
+            width: 95px; height: 142px; /* Стандартты өлшем */
             background: #fff; border-radius: 8px;
             position: absolute;
             display: flex; flex-direction: column; justify-content: space-between;
             padding: 5px; box-sizing: border-box;
             border: 1px solid #999;
             box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            transition: transform 0.2s ease-out; /* Жылдам реакция */
             transform-origin: center center;
-            backface-visibility: hidden; /* Жыпылықтауды жою */
         }
 
-        .small-card {
-            width: 60px !important;
-            height: 90px !important;
+        .bot-card, .small-card {
+            width: 70px !important; height: 105px !important;
         }
         .small-card .val-top, .small-card .val-bot { font-size: 14px; }
         .small-card .suit-big { font-size: 30px; }
 
         .red { color: #d32f2f; } .black { color: #212121; }
-        .val-top { font-size: 18px; font-weight: bold; line-height: 1; text-align: left;}
+        .val-top { font-size: 19px; font-weight: bold; line-height: 1; text-align: left;}
         .suit-big { font-size: 45px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
-        .val-bot { font-size: 18px; font-weight: bold; line-height: 1; text-align: left; transform: rotate(180deg); }
+        .val-bot { font-size: 19px; font-weight: bold; line-height: 1; text-align: left; transform: rotate(180deg); }
 
         .card-back {
             background: repeating-linear-gradient(45deg, #b00, #b00 10px, #fff 10px, #fff 12px);
@@ -147,15 +164,32 @@
         }
         .card-back * { display: none; }
 
+        /* Үстелдегі жұптар */
         .table-pair {
-            position: relative; width: 65px; height: 95px; margin: 5px 15px;
+            position: relative; width: 70px; height: 100px; margin: 5px 20px;
         }
         .card-attack { z-index: 1; transform: rotate(-3deg) scale(0.9); top: 0; left: 0; }
         .card-defend { z-index: 10; transform: translate(15px, 10px) rotate(8deg) scale(0.9); top: 0; left: 0; }
 
+        /* --- АНИМАЦИЯЛАР --- */
+        
+        /* 1. Битаға ұшу анимациясы */
+        .fly-to-bita {
+            position: fixed !important;
+            z-index: 9999 !important;
+            transition: all 0.6s ease-in !important;
+        }
+
+        /* 2. Боттың лақтыруы */
+        .bot-throw { animation: botThrowAnim 0.4s ease-out backwards; }
+        @keyframes botThrowAnim { 
+            from { transform: translate(0, -200px) scale(0.5); opacity: 0; } 
+            to { opacity: 1; } 
+        }
+
         /* --- БАТЫРМАЛАР --- */
         .controls {
-            z-index: 1000; margin-bottom: 20px; display: flex; gap: 20px; 
+            z-index: 1000; margin-bottom: 25px; display: flex; gap: 25px; 
             align-items: center; justify-content: center;
             opacity: 0; pointer-events: none; transition: opacity 0.3s;
         }
@@ -163,26 +197,25 @@
 
         .btn {
             position: relative;
-            padding: 12px 35px; border-radius: 25px; border: none;
-            font-weight: bold; font-size: 15px; cursor: pointer;
+            padding: 14px 40px; border-radius: 30px; border: none;
+            font-weight: bold; font-size: 16px; cursor: pointer;
             box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-            text-transform: uppercase; letter-spacing: 1px;
-            color: white; overflow: hidden; min-width: 140px;
+            text-transform: uppercase; color: white; overflow: hidden; min-width: 140px;
         }
         .btn:active { transform: scale(0.95); }
-        .btn-take { background: linear-gradient(to bottom, #fbc02d, #f57f17); color: #3e2723; }
-        .btn-bita { background: linear-gradient(to bottom, #e53935, #c62828); }
+        .btn-take { background: linear-gradient(to bottom, #ffb300, #ff6f00); color: #3e2723; }
+        .btn-bita { background: linear-gradient(to bottom, #e53935, #b71c1c); }
         .btn-done { background: linear-gradient(to bottom, #43a047, #2e7d32); }
 
         .timer-line {
             position: absolute; bottom: 0; left: 0; height: 4px; width: 100%;
-            background: rgba(255,255,255,0.6);
+            background: rgba(255,255,255,0.7);
             transform: scaleX(0); transform-origin: left;
             transition: transform 1s linear;
         }
 
         #bot-timer-msg {
-            position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%);
+            position: absolute; top: 60%; left: 50%; transform: translate(-50%, -50%);
             background: rgba(0,0,0,0.7); color: #fff; padding: 10px 20px;
             border-radius: 20px; font-weight: bold; display: none; z-index: 100;
             border: 1px solid #4cd137; text-align: center;
@@ -193,25 +226,8 @@
             background: transparent; z-index: 2000; display: none;
         }
 
-        /* --- 🔥 АНИМАЦИЯЛАР (CSS) 🔥 --- */
-        @keyframes flashRed {
-            0%, 100% { border-color: red; } 50% { border-color: red; box-shadow: 0 0 20px red; }
-        }
         .error-flash { animation: flashRed 0.5s ease-out; z-index: 9999 !important; }
-        
-        /* Боттың лақтыру анимациясы */
-        .bot-throw { animation: botThrowAnim 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards; }
-        @keyframes botThrowAnim { 
-            from { transform: translate(0, -250px) scale(0.5) rotate(180deg); opacity: 0; } 
-            to { opacity: 1; } 
-        }
-
-        /* Сенің лақтыру анимацияң (үстелге түскенде) */
-        .my-throw { animation: myThrowAnim 0.3s ease-out backwards; }
-        @keyframes myThrowAnim {
-            from { transform: translate(0, 200px) scale(1.5); opacity: 0; }
-            to { opacity: 1; }
-        }
+        @keyframes flashRed { 0%, 100% { border-color: red; } 50% { border-color: red; box-shadow: 0 0 20px red; } }
 
     </style>
 </head>
@@ -221,6 +237,9 @@
     <div id="bot-timer-msg">Бот алуға дайындалуда... <br><span id="bot-countdown">7</span></div>
 
     <div id="deck-container"></div>
+
+    <div id="discard-pile">
+        </div>
 
     <div id="bot-area">
         <div id="bot-hand"></div>
@@ -253,9 +272,6 @@
         let isGlobalDragging = false;
         let takeTimerInterval = null;
         let botTimerInterval = null;
-
-        // 🔥 КАРТАЛАРДЫҢ ЖАДЫ (MEMORY)
-        // Бұл ескі карталарды қайта анимациялаудан сақтайды
         let knownTableCards = new Set(); 
 
         const myHandDiv = document.getElementById('my-hand');
@@ -263,6 +279,7 @@
         const tableContainer = document.getElementById('cards-on-table');
         const dropZone = document.getElementById('drop-zone');
         const deckContainer = document.getElementById('deck-container');
+        const discardPile = document.getElementById('discard-pile');
         
         const btnControls = document.getElementById('btn-controls');
         const btnTake = document.getElementById('btn-take');
@@ -302,16 +319,18 @@
             if (isHand && isFaceUp) {
                 el.classList.add('my-card');
                 
+                // 🔥 СЕНІҢ ҚОЛЫҢ (СУРЕТТЕГІДЕЙ ЖЕЛПУІШ)
                 const screenWidth = window.innerWidth;
                 const maxHandWidth = screenWidth - 20; 
-                const cardWidth = 90; 
-                let step = 45; 
+                const cardWidth = 95; 
+                let step = 50; // Карта арасы ашық
+                
                 const totalWidthIfNeeded = cardWidth + (total - 1) * step;
                 if (totalWidthIfNeeded > maxHandWidth) step = (maxHandWidth - cardWidth) / (total - 1);
 
                 const center = (total - 1) / 2;
-                const angle = (index - center) * 5; 
-                const yOffset = Math.abs(index - center) * 8; 
+                const angle = (index - center) * 6; // Бұрылуы қаттырақ
+                const yOffset = Math.abs(index - center) * 12; // Доғасы үлкенірек
                 const xOffset = (index - center) * step;
                 
                 const baseTransform = `translate3d(${xOffset}px, ${yOffset}px, 0) rotate(${angle}deg)`;
@@ -321,6 +340,7 @@
                 el.dataset.baseTransform = baseTransform; 
                 el.dataset.originalZIndex = index + 10;
 
+                // Сүйреу логикасы
                 let startX, startY, shiftX, shiftY, isDragging = false;
 
                 el.addEventListener('touchstart', (e) => {
@@ -339,7 +359,7 @@
                         isDragging = true; isGlobalDragging = true;
                         el.classList.add('dragging');
                         el.style.position = 'fixed'; 
-                        el.style.transform = 'scale(1.1)'; 
+                        el.style.transform = 'scale(1.2)'; 
                         el.style.zIndex = 9999; el.style.margin = '0';
                     }
                     const touch = e.touches[0];
@@ -384,7 +404,7 @@
                             });
                             el.classList.add('active');
                             el.style.transition = 'transform 0.3s';
-                            el.style.transform = baseTransform + ' translateY(-30px)';
+                            el.style.transform = baseTransform + ' translateY(-40px)';
                             el.style.zIndex = 100;
                         }
                     }
@@ -426,6 +446,49 @@
             }, 500);
         }
 
+        // 🔥 БИТА АНИМАЦИЯСЫ (ОҢ ЖАҚҚА ҰШУ)
+        function animateToBita() {
+            // Үстелдегі барлық карталарды аламыз
+            const cards = tableContainer.querySelectorAll('.card');
+            const discardRect = discardPile.getBoundingClientRect();
+
+            cards.forEach((card, index) => {
+                // Клон жасап, ұшырамыз
+                const clone = card.cloneNode(true);
+                clone.classList.add('fly-to-bita');
+                // Қазіргі орны
+                const rect = card.getBoundingClientRect();
+                clone.style.left = rect.left + 'px';
+                clone.style.top = rect.top + 'px';
+                clone.style.width = rect.width + 'px';
+                clone.style.height = rect.height + 'px';
+                clone.style.transform = 'none'; // Ескі бұрылуды алып тастаймыз
+                
+                document.body.appendChild(clone);
+
+                // Келесі кадрда ұшырамыз
+                requestAnimationFrame(() => {
+                    clone.style.left = (discardRect.left + 10) + 'px';
+                    clone.style.top = (discardRect.top + 10) + 'px';
+                    // Ұшқанда аударылып, кішірейіп, бұрылады
+                    clone.style.transform = `rotate(${Math.random() * 360}deg) scale(0.5)`;
+                    clone.style.opacity = 0; // Соңында жоғалады
+                });
+
+                // Анимация біткен соң өшіреміз
+                setTimeout(() => clone.remove(), 600);
+            });
+
+            // Битаға визуалды карта қосамыз (үйінді көріну үшін)
+            const pileCard = document.createElement('div');
+            pileCard.className = 'discarded-card';
+            pileCard.style.transform = `rotate(${Math.random() * 20 - 10}deg)`;
+            discardPile.appendChild(pileCard);
+            // Үйінді тым көбейіп кетпесін (макс 5 карта)
+            if (discardPile.children.length > 5) discardPile.firstChild.remove();
+        }
+
+        // --- БАТЫРМАЛАР ---
         function handleTakeClick() {
             if (btnTake.disabled) return;
             btnTake.disabled = true;
@@ -466,6 +529,16 @@
         });
 
         socket.on('updateState', (state) => {
+            // ЕГЕР БҰРЫН КАРТА БОЛЫП, ЕНДІ БОС БОЛСА ЖӘНЕ БҰЛ "АЛУ" ЕМЕС БОЛСА -> БИТА АНИМАЦИЯСЫ
+            // Қарапайым логика: Егер үстел тазаланса, анимация ойнаймыз
+            // (Дәл "Алу" ма, "Бита" ма екенін білу қиын, бірақ визуалды әдемі болу үшін әр тазалауда ұшырамыз)
+            if (knownTableCards.size > 0 && state.table.length === 0) {
+                // Егер мен алсам, карталар маған келеді (сервер жаңартады)
+                // Егер бита болса, оңға ұшу керек.
+                // Біз жай ғана барлық жағдайда оңға ұшырамыз (әдемі көрінеді)
+                animateToBita();
+            }
+
             lastPlayedCardElement = null;
             isGlobalDragging = false;
             isWaitingForServer = false;
@@ -489,13 +562,15 @@
             if (state.attacker === 'player') {
                 if (state.table.length > 0) {
                     btnBita.style.display = 'block';
+                    
                     const isOdd = state.table.length % 2 !== 0; 
-                    if (isOdd) bitaText.innerText = "БИТА";
+                    if (isOdd) bitaText.innerText = "БИТА"; 
                     else bitaText.innerText = "БИТА";
                     
                     if (state.table.length > 0 && state.table.length % 2 !== 0) {
                          btnBita.className = 'btn btn-done'; 
                          bitaText.innerText = "АЛА БЕРСІН";
+                         
                          botTimerMsg.style.display = 'block';
                          let botSec = 7;
                          botCountdown.innerText = botSec;
@@ -512,7 +587,7 @@
                 btnControls.classList.add('visible');
             }
 
-            // 1. КОЛОДА & КОЗЫРЬ
+            // КОЛОДА & КОЗЫРЬ
             deckContainer.innerHTML = '';
             if (state.trumpCard && state.deckCount > 0) {
                 const tEl = createCard(state.trumpCard, true, 0, 0, false);
@@ -527,7 +602,7 @@
                 deckContainer.appendChild(dEl);
             }
 
-            // 2. МЕНІҢ ҚОЛЫМ
+            // МЕНІҢ ҚОЛЫМ
             myHandDiv.innerHTML = '';
             const sortedHand = state.playerHand.map((c, i) => ({...c, idx: i})).sort((a,b) => {
                  const isATrump = a.suit === state.trumpCard.suit;
@@ -542,7 +617,7 @@
                 myHandDiv.appendChild(createCard(c, true, i, sortedHand.length, true, c.idx));
             });
 
-            // 3. БОТТЫҢ ҚОЛЫ
+            // БОТТЫҢ ҚОЛЫ
             botHandDiv.innerHTML = '';
             const botTotal = state.botCardCount;
             let botStep = 25;
@@ -559,10 +634,8 @@
                 botHandDiv.appendChild(el);
             }
 
-            // 4. ҮСТЕЛ (SMART RENDER - ЕСКІЛЕРДІ ҚАЙТА САЛМАЙМЫЗ)
+            // ҮСТЕЛ (SMART RENDER)
             tableContainer.innerHTML = '';
-            
-            // Жаңадан келген карталардың тізімі (ID ретінде Value+Suit аламыз)
             const currentTableCards = new Set();
 
             for (let i = 0; i < state.table.length; i += 2) {
@@ -576,10 +649,8 @@
                 const attEl = createCard(att.card, true, 0,0,false);
                 attEl.classList.add('card-attack');
                 
-                // 🔥 ЕГЕР БҰЛ КАРТА БҰРЫН БОЛМАСА -> АНИМАЦИЯ БЕРЕМІЗ
                 if (!knownTableCards.has(attId)) {
                     if (att.owner === 'bot') attEl.classList.add('bot-throw');
-                    // Менің картамды анимацияламаймыз, себебі мен оны сүйреп әкелдім
                 }
                 pairDiv.appendChild(attEl);
 
@@ -591,7 +662,6 @@
                     const defEl = createCard(def.card, true, 0,0,false);
                     defEl.classList.add('card-defend');
                     
-                    // 🔥 ТЕК ЖАҢА КАРТАЛАРҒА АНИМАЦИЯ
                     if (!knownTableCards.has(defId)) {
                         if (def.owner === 'bot') defEl.classList.add('bot-throw');
                     }
@@ -599,8 +669,6 @@
                 }
                 tableContainer.appendChild(pairDiv);
             }
-
-            // Есімізді жаңартамыз (Келесі жолы бұларды ескі деп тану үшін)
             knownTableCards = currentTableCards;
         });
     </script>
