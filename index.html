@@ -529,37 +529,33 @@
                 // --- 🔥 PRO ФИКС: КАРТАНЫ ДӘЛДЕП ҚАЙТАРУ 🔥 ---
                 // --- 🔥 PRO ФИКС: СЫРҒАНАП КЕЛУ (FORCE REFLOW) 🔥 ---
                 // --- 🔥 ФИНАЛДЫҚ ТҮЗЕТУ: СЕНІМДІ ҚАЙТАРУ 🔥 ---
+                // --- 🔥 ФИНАЛ: 100% ҚАЙТАРУ АНИМАЦИЯСЫ 🔥 ---
         socket.on('invalidMove', () => {
-            console.log("Сервер: Қате жүріс!");
+            console.log("Сервер: Қате жүріс! Қайтару басталуда...");
 
-            // 1. БІЗГЕ КЕРЕК КАРТАНЫ ТАБАМЫЗ
-            // lastHiddenCard ескіріп кетуі мүмкін, сондықтан біз
-            // қазір қолда тұрған, бірақ "көрінбейтін" (opacity: 0) картаны іздейміз
-            let targetCard = null;
-            
-            // Егер lastHiddenCard тірі болса, соны аламыз
-            if (lastHiddenCard && document.body.contains(lastHiddenCard)) {
-                targetCard = lastHiddenCard;
-            } else {
-                // Егер ол өшіп қалса, қолдың ішінен жасырын тұрған картаны іздейміз
+            // 1. ЖАСЫРЫН КАРТАНЫ ІЗДЕП ТАБУ (Автоматты түрде)
+            let targetCard = lastHiddenCard;
+
+            // Егер lastHiddenCard бос болса, қолмен іздейміз
+            if (!targetCard || !document.body.contains(targetCard)) {
                 const cards = document.querySelectorAll('.my-card');
-                // Opacity 0 болып тұрған картаны табамыз
                 for (let c of cards) {
-                    if (c.style.opacity === '0') {
+                    // Opacity 0 (көрінбейтін) картаны табамыз
+                    if (window.getComputedStyle(c).opacity === '0') {
                         targetCard = c;
                         break;
                     }
                 }
             }
 
-            // Егер карта табылмаса, бәрін жағып жібереміз де, тоқтаймыз
+            // Егер карта табылмаса -> Бәрін жағып жібер (Сақтандыру)
             if (!targetCard) {
                 document.querySelectorAll('.my-card').forEach(c => c.style.opacity = '1');
                 return;
             }
 
-            // 2. ТҮПНҰСҚАНЫ ОРНЫНА (ҚОЛҒА) ҚОЮ
-            // Оны қолдағы орнына (baseTransform) қайтарамыз
+            // 2. ТҮПНҰСҚАНЫ ОРНЫНА (ҚОЛҒА) ҚАЙТАРУ
+            // Бұл өте маңызды! Клон дұрыс ұшуы үшін, түпнұсқа өз орнында тұруы керек.
             targetCard.style.transition = 'none';
             targetCard.style.position = 'absolute';
             targetCard.style.left = ''; 
@@ -568,7 +564,7 @@
             // Желпуіш координаты
             targetCard.style.transform = targetCard.dataset.baseTransform;
 
-            // 3. КООРДИНАТТАРДЫ АЛУ
+            // 3. КООРДИНАТТАРДЫ ЕНДІ АЛАМЫЗ
             const handRect = targetCard.getBoundingClientRect(); // Қолдағы нақты орны
             const dropRect = document.getElementById('drop-zone').getBoundingClientRect(); // Үстел
             
@@ -578,10 +574,10 @@
 
             // 4. КЛОН ЖАСАУ
             const returner = targetCard.cloneNode(true);
-            returner.className = 'card returning-card';
+            returner.className = 'card returning-card'; // CSS стиль
             returner.innerHTML = targetCard.innerHTML;
             
-            // БАСТАПҚЫ ОРНЫ (ҮСТЕЛДЕ)
+            // Клонды ҮСТЕЛГЕ қоямыз
             returner.style.position = 'fixed';
             returner.style.zIndex = '9999';
             returner.style.left = startX + 'px';
@@ -590,33 +586,35 @@
             returner.style.height = '135px';
             returner.style.margin = '0';
             returner.style.transform = 'scale(0.65)'; 
-            returner.style.transition = 'none'; // Анимациясыз қоямыз
+            returner.style.transition = 'none'; // Әзірге анимациясыз
 
             document.body.appendChild(returner);
 
-            // 🔥 СИҚЫРЛЫ ЖОЛ (Reflow) 🔥
+            // 🔥 БРАУЗЕРДІ ОЯТУ (Force Reflow) 🔥
+            // Бұл жол картаның үстелде тұрғанын растайды
             void returner.offsetWidth; 
 
             // 5. ЕНДІ ҰШЫРАМЫЗ!
-            // Ұшу уақытын 500мс қыламыз
+            // Ұшу уақыты: 0.5 секунд
             returner.style.transition = 'all 0.5s cubic-bezier(0.25, 1, 0.5, 1)';
             
+            // Қолға қарай жылжытамыз
             returner.style.left = handRect.left + 'px';
             returner.style.top = handRect.top + 'px';
             
-            // Қолдағы бұрылуын қосамыз
+            // Қолдағы бұрылуын (Rotate) қосамыз
             const rotation = targetCard.dataset.baseTransform ? targetCard.dataset.baseTransform.match(/rotate\([^)]+\)/) : null;
             const rotateStr = rotation ? rotation[0] : 'rotate(0deg)';
             returner.style.transform = `scale(1) ${rotateStr}`;
 
-            // 6. ФИНИШ (0.5 секунд)
+            // 6. ФИНИШ (0.5 секундтан кейін)
             setTimeout(() => {
-                returner.remove(); 
+                returner.remove(); // Клонды өшіреміз
                 
                 // Түпнұсқаны көрсетеміз
                 targetCard.style.opacity = 1;
                 
-                // Қызарып дірілдеу
+                // Қызарып дірілдеу (Error Flash)
                 targetCard.classList.add('error-flash');
                 setTimeout(() => {
                     targetCard.classList.remove('error-flash');
@@ -624,6 +622,7 @@
                 }, 500);
             }, 500);
         });
+
 
 
     </script>
