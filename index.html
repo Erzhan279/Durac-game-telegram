@@ -545,27 +545,62 @@
                 myHandDiv.appendChild(createCard(c, true, i, sortedHand.length, true, c.originalIndex));
             });
 
+                        // 1. БОТТЫҢ ҚОЛЫН ЖЕЛПУІШ ҚЫЛУ
             botHandDiv.innerHTML = '';
-            for(let i=0; i<state.botCardCount; i++) botHandDiv.appendChild(createCard(null, false, i));
+            const botTotal = state.botCardCount;
+            let botStep = 30; // Арасы тығыз
+            if (botTotal > 6) botStep = 20; // Карта көп болса қысылады
+            
+            for(let i=0; i < botTotal; i++) {
+                // Ботқа суреті жоқ (арқасы көрінетін) карта жасаймыз
+                const el = createCard(null, false, i, botTotal, false, 0); 
+                el.classList.add('bot-card'); // Арнайы класс
+                
+                // Желпуіш есебі (Теріс қарай)
+                const center = (botTotal - 1) / 2;
+                const angle = (i - center) * -5; // Төмен қараған доға
+                const xOffset = (i - center) * botStep;
+                const yOffset = Math.abs(i - center) * 5; 
+                
+                // transform: scale(0.7) -> 70% кішірейтеміз (Алыста тұрғандай)
+                el.style.transform = `translate3d(${xOffset}px, ${yOffset}px, 0) rotate(${angle}deg) scale(0.7)`;
+                el.style.zIndex = i;
+                
+                botHandDiv.appendChild(el);
+            }
 
+            // 2. ҮСТЕЛГЕ АНИМАЦИЯ ҚОСУ
             tableContainer.innerHTML = '';
             for (let i = 0; i < state.table.length; i += 2) {
                 const pairDiv = document.createElement('div');
                 pairDiv.className = 'table-pair';
                 
+                // Шабуыл картасы
                 const attackCard = state.table[i].card;
                 const attackEl = createCard(attackCard, true, 0,0,false);
                 attackEl.classList.add('card-attack'); 
+                
+                // Егер картаны БОТ тастаса -> Ұшып келсін
+                if (state.table[i].owner === 'bot') {
+                     attackEl.classList.add('animate-bot-play');
+                }
                 pairDiv.appendChild(attackEl);
 
+                // Қорғаныс картасы (егер бар болса)
                 if (state.table[i+1]) {
                     const defendCard = state.table[i+1].card;
                     const defendEl = createCard(defendCard, true, 0,0,false);
                     defendEl.classList.add('card-defend'); 
+                    
+                    // Егер қорғанысты БОТ тастаса -> Ұшып келсін
+                    if (state.table[i+1].owner === 'bot') {
+                        defendEl.classList.add('animate-bot-play');
+                    }
                     pairDiv.appendChild(defendEl);
                 }
                 tableContainer.appendChild(pairDiv);
             }
+
 
             trumpDiv.innerHTML = '';
             if (state.trumpCard) {
