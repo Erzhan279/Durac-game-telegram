@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Durak Final Timer</title>
+    <title>Durak Pro UI</title>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <style>
-        /* --- НЕГІЗГІ ДИЗАЙН --- */
+        /* --- 1. НЕГІЗГІ ФОН --- */
         body {
-            background: radial-gradient(circle at 50% 30%, #1e6028 0%, #0a2910 100%);
+            background: radial-gradient(circle at 50% 40%, #1b5e20 0%, #052207 100%);
             color: white;
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
@@ -20,38 +20,68 @@
             touch-action: none;
         }
 
-        /* 1. ЖОҒАРҒЫ АЙМАҚ (Бот + Колода) */
-        #top-area {
+        /* --- 2. БОТ АЙМАҒЫ (ЖОҒАРЫ) --- */
+        #bot-area {
             position: relative;
             width: 100%;
-            height: 140px;
-            display: flex;
+            height: 120px; /* Биіктігі аз */
             z-index: 10;
         }
 
-        /* Колода аймағы (Сол жақ) */
-        #deck-area {
-            position: relative;
-            width: 110px; /* Бекітілген ені */
-            height: 100%;
-            flex-shrink: 0;
-        }
-
-        /* Боттың қолы (Ортаңғы жақ) */
-        #bot-hand-area {
-            flex: 1;
-            position: relative;
+        /* Боттың қолы (Ортада, жоғары шығып тұрады) */
+        #bot-hand {
+            position: absolute;
+            top: -45px; /* 🔥 АСТЫҢҒЫ ЖАҒЫ КӨРІНБЕУ ҮШІН ЖОҒАРЫ КӨТЕРДІК */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 250px;
             height: 100%;
             display: flex;
             justify-content: center;
-        }
-        #bot-hand {
-            position: relative;
-            width: 220px;
-            height: 100%;
+            align-items: flex-start;
         }
 
-        /* 2. ОРТАҢҒЫ АЙМАҚ (Үстел) */
+        /* Бот картасы */
+        .bot-card {
+            width: 70px !important;
+            height: 105px !important;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5) !important;
+            transition: transform 0.3s ease-out;
+        }
+
+        /* --- 3. КОЛОДА МЕН КОЗЫРЬ (СОЛ ЖАҚ) --- */
+        #deck-container {
+            position: absolute;
+            top: 100px; /* Боттан төменірек */
+            left: 0;    /* Экранның шетіне жабысады */
+            width: 80px;
+            height: 100px;
+            z-index: 5;
+        }
+
+        /* Козырь (Көлденең, жартылай шығып тұр) */
+        #trump-card-el {
+            position: absolute;
+            left: -15px; /* Жартысы далада */
+            top: 10px;
+            transform: rotate(90deg);
+            z-index: 1;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+        }
+
+        /* Колода (Үстінде) */
+        #deck-pile-el {
+            position: absolute;
+            left: 10px; /* Козырьдің үстін жартылай жабады */
+            top: 0;
+            z-index: 5;
+        }
+        .deck-counter {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 20px; font-weight: bold; color: white; text-shadow: 1px 1px 2px black;
+        }
+
+        /* --- 4. ҮСТЕЛ (ОРТА) --- */
         #table-area {
             flex: 1;
             position: relative;
@@ -59,7 +89,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 5;
+            z-index: 6;
         }
         #cards-on-table {
             position: relative;
@@ -68,52 +98,50 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            flex-wrap: wrap;
             pointer-events: none;
         }
         #drop-zone { position: absolute; width: 100%; height: 100%; top: 0; left: 0; }
 
-        /* 3. ТӨМЕНГІ АЙМАҚ (Мен) */
+        /* --- 5. МЕНІҢ АЙМАҒЫМ (ТӨМЕН) --- */
         #my-area {
-            height: 280px;
+            height: 260px;
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
             align-items: center;
-            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
             z-index: 20;
-            padding-bottom: 20px;
+            padding-bottom: 15px;
         }
         #my-hand {
             position: relative;
             width: 100%;
-            height: 170px;
+            height: 160px;
             display: flex;
             justify-content: center;
             align-items: flex-end;
         }
 
-        /* --- КАРТАЛАР --- */
+        /* --- КАРТА СТИЛІ --- */
         .card {
             width: 90px; height: 135px;
             background: #fff; border-radius: 8px;
             position: absolute;
             display: flex; flex-direction: column; justify-content: space-between;
             padding: 5px; box-sizing: border-box;
-            border: 1px solid #ccc;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+            border: 1px solid #999;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
             transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
             transform-origin: center center;
         }
 
-        /* Кішкентай карталар (Бот, Колода, Үстел) */
+        /* Кішірейту (Козырь мен Үстелге) */
         .small-card {
-            width: 60px !important;
-            height: 90px !important;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            width: 65px !important;
+            height: 100px !important;
         }
         .small-card .val-top, .small-card .val-bot { font-size: 14px; }
-        .small-card .suit-big { font-size: 35px; }
+        .small-card .suit-big { font-size: 30px; }
 
         .red { color: #d32f2f; } .black { color: #212121; }
         .val-top { font-size: 20px; font-weight: bold; line-height: 1; text-align: left;}
@@ -126,88 +154,53 @@
         }
         .card-back * { display: none; }
 
-        /* КОЛОДА ЖӘНЕ КОЗЫРЬ ОРНЫ */
-        /* Козырь анық көрінуі үшін */
-        #trump-card-el {
-            position: absolute;
-            left: 25px; 
-            top: 25px;
-            transform: rotate(90deg);
-            z-index: 1;
-        }
-        /* Колода үстінде */
-        #deck-pile-el {
-            position: absolute;
-            left: 10px;
-            top: 15px;
-            z-index: 5;
-        }
-        .deck-counter {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            font-size: 18px; font-weight: bold; color: white; text-shadow: 1px 1px 2px black;
-        }
-
         /* ҮСТЕЛДЕГІ ЖҰПТАР */
         .table-pair {
-            position: relative; width: 65px; height: 95px; margin: 10px 15px;
+            position: relative; width: 70px; height: 100px; margin: 5px 15px;
         }
-        .card-attack { z-index: 1; transform: rotate(-5deg); top: 0; left: 0; }
-        .card-defend { z-index: 10; transform: translate(15px, 10px) rotate(10deg); top: 0; left: 0; }
+        .card-attack { z-index: 1; transform: rotate(-3deg) scale(0.85); top:0; left:0; }
+        .card-defend { z-index: 10; transform: translate(15px, 10px) rotate(8deg) scale(0.85); top:0; left:0; }
 
-        /* --- БАТЫРМАЛАР (ӘДЕМІ & ЖАСЫРЫН) --- */
+        /* --- БАТЫРМАЛАР ЖӘНЕ ТАЙМЕР --- */
         .controls {
-            z-index: 1000; margin-bottom: 25px; display: flex; gap: 20px;
+            z-index: 1000; margin-bottom: 20px; display: flex; gap: 20px; 
+            align-items: center; justify-content: center;
             opacity: 0; pointer-events: none; transition: opacity 0.3s;
         }
         .controls.visible { opacity: 1; pointer-events: auto; }
 
         .btn {
+            position: relative;
             padding: 12px 40px; border-radius: 30px; border: none;
             font-weight: bold; font-size: 16px; cursor: pointer;
             box-shadow: 0 5px 15px rgba(0,0,0,0.5);
             text-transform: uppercase; letter-spacing: 1px;
-            transition: transform 0.1s;
+            color: white; overflow: hidden;
         }
         .btn:active { transform: scale(0.95); }
-        .btn-take { background: linear-gradient(to bottom, #ffca28, #ff6f00); color: #3e2723; }
-        .btn-bita { background: linear-gradient(to bottom, #ef5350, #b71c1c); color: white; }
+        .btn-take { background: linear-gradient(to bottom, #fbc02d, #f57f17); color: #3e2723; }
+        .btn-bita { background: linear-gradient(to bottom, #e53935, #c62828); }
 
-        /* ТАЙМЕРЛЕР */
-        #timer-bar-container {
-            position: absolute; bottom: 300px; width: 80%; height: 6px;
-            background: rgba(255,255,255,0.2); border-radius: 3px;
-            display: none; z-index: 50;
-        }
-        #timer-bar {
-            height: 100%; width: 100%; background: #4cd137;
-            border-radius: 3px; transition: width 1s linear;
+        /* ТАЙМЕР СЫЗЫҒЫ (Батырманың астында) */
+        .timer-line {
+            position: absolute; bottom: 0; left: 0; height: 4px; width: 100%;
+            background: rgba(255,255,255,0.5);
+            transform: scaleX(0); transform-origin: left;
+            transition: transform 1s linear;
         }
 
+        /* Статус жазуы (Ортада) */
         #status-pill {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.8); color: white; padding: 10px 25px;
+            background: rgba(0,0,0,0.6); color: white; padding: 8px 20px;
             border-radius: 20px; font-weight: bold; display: none; z-index: 100;
-            white-space: nowrap;
+            backdrop-filter: blur(5px);
         }
 
-        /* 7 секундтық санауыш */
-        #take-timer-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); z-index: 2000;
-            display: none; flex-direction: column;
-            justify-content: center; align-items: center;
-        }
-        .take-circle {
-            width: 80px; height: 80px; border-radius: 50%;
-            border: 5px solid #ffca28; color: white;
-            font-size: 30px; font-weight: bold;
-            display: flex; justify-content: center; align-items: center;
-            margin-bottom: 20px;
-        }
-        .take-text { color: white; font-size: 18px; text-align: center; }
-        .btn-cancel-take {
-            margin-top: 20px; background: #fff; color: #333; padding: 10px 20px;
-            border: none; border-radius: 20px; font-weight: bold;
+        /* Алу кезіндегі күңгірттену (Блок) */
+        #take-blocker {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.2); z-index: 2000; display: none;
         }
 
         /* Қате эффект */
@@ -217,36 +210,22 @@
         .error-flash { animation: flashRed 0.5s ease-out; z-index: 9999 !important; }
         
         /* Ұшу анимациясы */
-        .flying-card {
-            position: fixed !important; z-index: 9999 !important;
-            transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1) !important;
-            box-shadow: 0 30px 60px rgba(0,0,0,0.5) !important;
-        }
+        .bot-throw { animation: botThrowAnim 0.4s ease-out backwards; }
+        @keyframes botThrowAnim { from { transform: translate(0, -200px) scale(0.5); opacity: 0; } to { opacity: 1; } }
 
     </style>
 </head>
 <body>
 
-    <div id="take-timer-overlay">
-        <div class="take-circle" id="take-countdown">7</div>
-        <div class="take-text">Қарсыластар карта тастай ма?<br>Күте тұрыңыз...</div>
-        <button class="btn-cancel-take" onclick="cancelTake()">Тоқтату</button>
-    </div>
-
-    <div id="timer-bar-container">
-        <div id="timer-bar"></div>
-    </div>
+    <div id="take-blocker"></div>
 
     <div id="status-pill">...</div>
 
-    <div id="top-area">
-        <div id="deck-area">
-            <div id="trump-container"></div>
-            <div id="deck-container"></div>
+    <div id="deck-container">
         </div>
-        <div id="bot-hand-area">
-            <div id="bot-hand"></div>
-        </div>
+
+    <div id="bot-area">
+        <div id="bot-hand"></div>
     </div>
 
     <div id="table-area">
@@ -256,8 +235,15 @@
 
     <div id="my-area">
         <div class="controls" id="btn-controls">
-            <button class="btn btn-take" id="btn-take" onclick="startTakeTimer()">АЛУ</button>
-            <button class="btn btn-bita" id="btn-bita" onclick="socket.emit('actionBita')">БИТА</button>
+            <button class="btn btn-take" id="btn-take" onclick="handleTakeClick()">
+                <span id="take-text">АЛУ</span>
+                <div class="timer-line" id="take-timer-line"></div>
+            </button>
+            
+            <button class="btn btn-bita" id="btn-bita" onclick="socket.emit('actionBita')">
+                БИТА
+                <div class="timer-line" id="turn-timer-line"></div>
+            </button>
         </div>
         <div id="my-hand"></div>
     </div>
@@ -269,29 +255,21 @@
         let lastPlayedCardElement = null;
         let isWaitingForServer = false;
         let isGlobalDragging = false;
-        
-        // Таймерлер
-        let turnTimerInterval = null;
-        let turnSeconds = 30;
         let takeTimerInterval = null;
-        let takeSeconds = 7;
 
+        // Элементтер
         const myHandDiv = document.getElementById('my-hand');
         const botHandDiv = document.getElementById('bot-hand');
         const tableContainer = document.getElementById('cards-on-table');
         const dropZone = document.getElementById('drop-zone');
-        const trumpContainer = document.getElementById('trump-container');
         const deckContainer = document.getElementById('deck-container');
         const statusPill = document.getElementById('status-pill');
         const btnControls = document.getElementById('btn-controls');
         const btnTake = document.getElementById('btn-take');
         const btnBita = document.getElementById('btn-bita');
-        
-        // Таймер элементтері
-        const timerBarContainer = document.getElementById('timer-bar-container');
-        const timerBar = document.getElementById('timer-bar');
-        const takeOverlay = document.getElementById('take-timer-overlay');
-        const takeCountdown = document.getElementById('take-countdown');
+        const takeText = document.getElementById('take-text');
+        const takeTimerLine = document.getElementById('take-timer-line');
+        const takeBlocker = document.getElementById('take-blocker');
 
         // --- КАРТА ЖАСАУ ---
         function createCardHTML(card) {
@@ -311,12 +289,13 @@
             if (!isFaceUp) el.classList.add('card-back');
             else el.innerHTML = createCardHTML(card);
 
-            // 1. КІШКЕНТАЙ КАРТАЛАР (Бот, Үстел, Колода)
-            if (!isHand) {
-                el.classList.add('small-card');
-            }
+            // КІШКЕНТАЙ КАРТАЛАР (Бот, Үстел, Колода)
+            if (!isHand) el.classList.add('small-card');
 
-            if (isBot) return el; // Боттың картасына арнайы стиль кейін беріледі
+            if (isBot) {
+                el.classList.add('bot-card');
+                return el;
+            }
 
             if (isHand && isFaceUp) {
                 el.classList.add('my-card');
@@ -376,14 +355,14 @@
                         const dropRect = dropZone.getBoundingClientRect();
                         if (touch.clientY < dropRect.bottom && touch.clientY > dropRect.top) {
                             isWaitingForServer = true;
-                            const centerX = dropRect.left + dropRect.width/2 - 30; // 30 = жарты ені
+                            const centerX = dropRect.left + dropRect.width/2 - 30; 
                             const centerY = dropRect.top + dropRect.height/2 - 45;
                             const randomAngle = Math.floor(Math.random() * 20) - 10;
 
                             el.style.transition = 'all 0.3s ease-out';
                             el.style.left = centerX + 'px';
                             el.style.top = centerY + 'px';
-                            el.style.transform = `scale(0.7) rotate(${randomAngle}deg)`; // Үстелде кішірейеді
+                            el.style.transform = `scale(0.7) rotate(${randomAngle}deg)`;
                             
                             lastPlayedCardElement = el;
                             socket.emit('playCard', originalIndex);
@@ -449,67 +428,43 @@
             }, 500);
         }
 
-        // --- ТАЙМЕР ЛОГИКАСЫ ---
+        // --- ТАЙМЕРЛЕР ЖӘНЕ БАТЫРМАЛАР ---
 
-        // 1. Жүріс таймері (30 секунд)
-        function startTurnTimer() {
-            clearInterval(turnTimerInterval);
-            turnSeconds = 30;
-            timerBarContainer.style.display = 'block';
-            updateTimerBar();
+        // АЛУ БАТЫРМАСЫНЫҢ ЛОГИКАСЫ (5 секунд күту)
+        function handleTakeClick() {
+            // Егер қазір санап жатса, қайта басуға болмайды
+            if (btnTake.disabled) return;
 
-            turnTimerInterval = setInterval(() => {
-                turnSeconds--;
-                updateTimerBar();
-                if (turnSeconds <= 0) {
-                    clearInterval(turnTimerInterval);
-                    timerBarContainer.style.display = 'none';
-                    // Уақыт бітті -> Автоматты әрекет (Сервер шешеді, бірақ біз визуалды көрсетеміз)
-                    statusPill.innerText = "Уақыт бітті!";
-                    statusPill.style.color = 'red';
-                    // Егер Бита немесе Алу мүмкін болса, соны жіберуге болады
-                    if(btnTake.style.display !== 'none') socket.emit('actionTake');
-                    else if(btnBita.style.display !== 'none') socket.emit('actionBita');
-                }
-            }, 1000);
-        }
-
-        function stopTurnTimer() {
-            clearInterval(turnTimerInterval);
-            timerBarContainer.style.display = 'none';
-        }
-
-        function updateTimerBar() {
-            const pct = (turnSeconds / 30) * 100;
-            timerBar.style.width = pct + '%';
-            if(turnSeconds < 10) timerBar.style.background = 'red';
-            else timerBar.style.background = '#4cd137';
-        }
-
-        // 2. Алу таймері (7 секунд)
-        function startTakeTimer() {
-            takeOverlay.style.display = 'flex';
-            takeSeconds = 7;
-            takeCountdown.innerText = takeSeconds;
+            btnTake.disabled = true;
+            takeBlocker.style.display = 'block'; // Басқа ештеңе басылмасын
             
-            clearInterval(takeTimerInterval);
+            let seconds = 5;
+            takeText.innerText = `Күту... ${seconds}`;
+            takeTimerLine.style.transform = 'scaleX(1)';
+            takeTimerLine.style.transition = 'transform 5s linear';
+            
+            // Анимацияны бастаймыз (CSS)
+            requestAnimationFrame(() => {
+                takeTimerLine.style.transform = 'scaleX(0)';
+            });
+
             takeTimerInterval = setInterval(() => {
-                takeSeconds--;
-                takeCountdown.innerText = takeSeconds;
-                if (takeSeconds <= 0) {
+                seconds--;
+                if (seconds > 0) {
+                    takeText.innerText = `Күту... ${seconds}`;
+                } else {
+                    // Уақыт бітті -> Серверге жібереміз
                     clearInterval(takeTimerInterval);
-                    takeOverlay.style.display = 'none';
-                    // Уақыт бітті -> Серверге "Аламын" деп айтамыз
                     socket.emit('actionTake');
+                    // Батырманы қалпына келтіру
+                    btnTake.disabled = false;
+                    takeBlocker.style.display = 'none';
+                    takeText.innerText = 'АЛУ';
+                    takeTimerLine.style.transition = 'none';
+                    takeTimerLine.style.transform = 'scaleX(1)';
                 }
             }, 1000);
         }
-
-        function cancelTake() {
-            clearInterval(takeTimerInterval);
-            takeOverlay.style.display = 'none';
-        }
-
 
         // --- SOCKETS ---
 
@@ -526,63 +481,57 @@
             lastPlayedCardElement = null;
             isGlobalDragging = false;
             isWaitingForServer = false;
-            
-            // Егер таймер (7с) жүріп жатса және біреу карта қосса -> Таймерді тоқтатпаймыз, 
-            // бірақ егер ойыншы ауысса -> тоқтатамыз.
-            // Қарапайым болу үшін: жаңа күй келсе, ескі таймерді өшіреміз (егер ол жүріс таймері болса).
-            // Ал "Алу" таймері тек қолмен өшеді немесе біткенде.
+            takeBlocker.style.display = 'none';
+            clearInterval(takeTimerInterval);
+            if(btnTake) {
+                btnTake.disabled = false;
+                takeText.innerText = 'АЛУ';
+                takeTimerLine.style.transition = 'none';
+                takeTimerLine.style.transform = 'scaleX(1)';
+            }
 
-            // 1. БАТЫРМАЛАРДЫ КӨРСЕТУ/ЖАСЫРУ
+            // БАТЫРМАЛАРДЫ КӨРСЕТУ
             btnControls.classList.remove('visible');
             btnTake.style.display = 'none';
             btnBita.style.display = 'none';
 
             if (state.attacker === 'player') {
-                // Мен шабуылдамын -> Бита мүмкін бе?
-                // Серверден "битаға болады" деген флаг келсе жақсы, әйтпесе үстел бос болмаса көрсетеміз
                 if (state.table.length > 0) {
                     btnBita.style.display = 'block';
                     btnControls.classList.add('visible');
                 }
-                startTurnTimer(); // Менің кезегім
             } else if (state.attacker === 'bot') {
-                // Мен қорғаныстамын -> Алу керек
                 btnTake.style.display = 'block';
                 btnControls.classList.add('visible');
-                startTurnTimer(); // Менің кезегім (қорғану)
-            } else {
-                stopTurnTimer(); // Менің кезегім емес
             }
 
-            // Статус жазуы
+            // СТАТУС
             if(state.winner) {
                 statusPill.innerText = state.winner === 'player' ? "🎉 ЖЕҢІС!" : "💀 ЖЕҢІЛІС";
                 statusPill.style.color = state.winner === 'player' ? 'gold' : 'red';
                 statusPill.style.display = 'block';
-                stopTurnTimer();
             } else {
-                statusPill.innerText = state.attacker === 'player' ? "Сіздің жүріс" : "Қорғаныңыз!";
-                statusPill.style.color = state.attacker === 'player' ? '#4cd137' : '#ffca28';
-                statusPill.style.display = 'block';
+                statusPill.style.display = 'none'; // Статусты алып тастадық, тек соңында шығады
             }
 
-            // 2. КОЛОДА & КОЗЫРЬ (Түзелген орын)
-            trumpContainer.innerHTML = '';
+            // 1. КОЛОДА & КОЗЫРЬ (ТҮЗЕЛГЕН)
             deckContainer.innerHTML = '';
+            // Козырь астында
             if (state.trumpCard && state.deckCount > 0) {
                 const tEl = createCard(state.trumpCard, true, 0, 0, false);
                 tEl.id = 'trump-card-el';
-                trumpContainer.appendChild(tEl);
+                deckContainer.appendChild(tEl);
             }
+            // Колода үстінде
             if (state.deckCount > 0) {
                 const dEl = document.createElement('div');
-                dEl.className = 'card card-back small-card'; // Кішкентай
+                dEl.className = 'card card-back small-card';
                 dEl.id = 'deck-pile-el';
                 dEl.innerHTML = `<div class="deck-counter">${state.deckCount}</div>`;
                 deckContainer.appendChild(dEl);
             }
 
-            // 3. МЕНІҢ ҚОЛЫМ
+            // 2. МЕНІҢ ҚОЛЫМ
             myHandDiv.innerHTML = '';
             const sortedHand = state.playerHand.map((c, i) => ({...c, idx: i})).sort((a,b) => {
                  const isATrump = a.suit === state.trumpCard.suit;
@@ -597,16 +546,14 @@
                 myHandDiv.appendChild(createCard(c, true, i, sortedHand.length, true, c.idx));
             });
 
-            // 4. БОТТЫҢ ҚОЛЫ (Желпуіш, Кіші)
+            // 3. БОТТЫҢ ҚОЛЫ (ЖОҒАРЫ КӨТЕРІЛГЕН)
             botHandDiv.innerHTML = '';
             const botTotal = state.botCardCount;
             let botStep = 25;
             if (botTotal > 8) botStep = 15;
 
             for(let i=0; i < botTotal; i++) {
-                // Ботқа суреті жоқ карта
                 const el = createCard(null, false, i, botTotal, false, 0, true);
-                
                 const center = (botTotal - 1) / 2;
                 const x = (i - center) * botStep;
                 const y = Math.abs(i - center) * 4; 
@@ -617,7 +564,7 @@
                 botHandDiv.appendChild(el);
             }
 
-            // 5. ҮСТЕЛ (Кішірейтілген)
+            // 4. ҮСТЕЛ
             tableContainer.innerHTML = '';
             for (let i = 0; i < state.table.length; i += 2) {
                 const pairDiv = document.createElement('div');
@@ -626,12 +573,14 @@
                 const att = state.table[i];
                 const attEl = createCard(att.card, true, 0,0,false);
                 attEl.classList.add('card-attack');
+                if (att.owner === 'bot') attEl.classList.add('bot-throw');
                 pairDiv.appendChild(attEl);
 
                 if (state.table[i+1]) {
                     const def = state.table[i+1];
                     const defEl = createCard(def.card, true, 0,0,false);
                     defEl.classList.add('card-defend');
+                    if (def.owner === 'bot') defEl.classList.add('bot-throw');
                     pairDiv.appendChild(defEl);
                 }
                 tableContainer.appendChild(pairDiv);
