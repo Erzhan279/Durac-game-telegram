@@ -528,35 +528,58 @@
                 // --- 🔥 PRO АНИМАЦИЯ (КЕПІЛДІКПЕН ҰШУ) 🔥 ---
                 // --- 🔥 PRO ФИКС: КАРТАНЫ ДӘЛДЕП ҚАЙТАРУ 🔥 ---
                 // --- 🔥 PRO ФИКС: СЫРҒАНАП КЕЛУ (FORCE REFLOW) 🔥 ---
+                // --- 🔥 ФИНАЛДЫҚ ТҮЗЕТУ: СЕНІМДІ ҚАЙТАРУ 🔥 ---
         socket.on('invalidMove', () => {
-            if (!lastHiddenCard) {
-                // Сақтандыру: Егер карта табылмаса, бәрін көрсетеміз
+            console.log("Сервер: Қате жүріс!");
+
+            // 1. БІЗГЕ КЕРЕК КАРТАНЫ ТАБАМЫЗ
+            // lastHiddenCard ескіріп кетуі мүмкін, сондықтан біз
+            // қазір қолда тұрған, бірақ "көрінбейтін" (opacity: 0) картаны іздейміз
+            let targetCard = null;
+            
+            // Егер lastHiddenCard тірі болса, соны аламыз
+            if (lastHiddenCard && document.body.contains(lastHiddenCard)) {
+                targetCard = lastHiddenCard;
+            } else {
+                // Егер ол өшіп қалса, қолдың ішінен жасырын тұрған картаны іздейміз
+                const cards = document.querySelectorAll('.my-card');
+                // Opacity 0 болып тұрған картаны табамыз
+                for (let c of cards) {
+                    if (c.style.opacity === '0') {
+                        targetCard = c;
+                        break;
+                    }
+                }
+            }
+
+            // Егер карта табылмаса, бәрін жағып жібереміз де, тоқтаймыз
+            if (!targetCard) {
                 document.querySelectorAll('.my-card').forEach(c => c.style.opacity = '1');
                 return;
             }
 
-            // 1. ТҮПНҰСҚАНЫ ОРНЫНА (ҚОЛҒА) ҚАЙТАРУ
-            // Бұл карта әлі көрінбей тұр, бірақ ол өз орнына баруы керек
-            lastHiddenCard.style.transition = 'none'; // Анимациясыз
-            lastHiddenCard.style.position = 'absolute';
-            lastHiddenCard.style.left = ''; 
-            lastHiddenCard.style.top = '';
-            lastHiddenCard.style.margin = '';
+            // 2. ТҮПНҰСҚАНЫ ОРНЫНА (ҚОЛҒА) ҚОЮ
+            // Оны қолдағы орнына (baseTransform) қайтарамыз
+            targetCard.style.transition = 'none';
+            targetCard.style.position = 'absolute';
+            targetCard.style.left = ''; 
+            targetCard.style.top = '';
+            targetCard.style.margin = '';
             // Желпуіш координаты
-            lastHiddenCard.style.transform = lastHiddenCard.dataset.baseTransform;
+            targetCard.style.transform = targetCard.dataset.baseTransform;
 
-            // 2. КООРДИНАТТАРДЫ ЕСЕПТЕУ
-            const handRect = lastHiddenCard.getBoundingClientRect(); // Қолдағы орны
+            // 3. КООРДИНАТТАРДЫ АЛУ
+            const handRect = targetCard.getBoundingClientRect(); // Қолдағы нақты орны
             const dropRect = document.getElementById('drop-zone').getBoundingClientRect(); // Үстел
             
             // Үстелдің ортасы
             const startX = dropRect.left + (dropRect.width / 2) - 30; 
             const startY = dropRect.top + (dropRect.height / 2) - 45;
 
-            // 3. ҰШАТЫН КЛОН ЖАСАУ
-            const returner = lastHiddenCard.cloneNode(true);
+            // 4. КЛОН ЖАСАУ
+            const returner = targetCard.cloneNode(true);
             returner.className = 'card returning-card';
-            returner.innerHTML = lastHiddenCard.innerHTML;
+            returner.innerHTML = targetCard.innerHTML;
             
             // БАСТАПҚЫ ОРНЫ (ҮСТЕЛДЕ)
             returner.style.position = 'fixed';
@@ -566,44 +589,42 @@
             returner.style.width = '90px';
             returner.style.height = '135px';
             returner.style.margin = '0';
-            returner.style.transform = 'scale(0.65)'; // Кішкентай
-            returner.style.transition = 'none'; // ⚠️ Әзірге анимация ЖОҚ!
+            returner.style.transform = 'scale(0.65)'; 
+            returner.style.transition = 'none'; // Анимациясыз қоямыз
 
             document.body.appendChild(returner);
 
-            // 🔥 СИҚЫРЛЫ ЖОЛ (BROWSER REFLOW) 🔥
-            // Бұл жол браузерді "оятып", картаның үстелде тұрғанын мойындатады
+            // 🔥 СИҚЫРЛЫ ЖОЛ (Reflow) 🔥
             void returner.offsetWidth; 
 
-            // 4. ЕНДІ ҰШЫРАМЫЗ!
-            // Енді анимацияны қосамыз
-            returner.style.transition = 'all 0.6s cubic-bezier(0.25, 1, 0.5, 1)';
+            // 5. ЕНДІ ҰШЫРАМЫЗ!
+            // Ұшу уақытын 500мс қыламыз
+            returner.style.transition = 'all 0.5s cubic-bezier(0.25, 1, 0.5, 1)';
             
-            // Қолға қарай жылжытамыз
             returner.style.left = handRect.left + 'px';
             returner.style.top = handRect.top + 'px';
             
-            // Қолдағыдай бұрылу
-            const rotation = lastHiddenCard.dataset.baseTransform ? lastHiddenCard.dataset.baseTransform.match(/rotate\([^)]+\)/) : null;
+            // Қолдағы бұрылуын қосамыз
+            const rotation = targetCard.dataset.baseTransform ? targetCard.dataset.baseTransform.match(/rotate\([^)]+\)/) : null;
             const rotateStr = rotation ? rotation[0] : 'rotate(0deg)';
             returner.style.transform = `scale(1) ${rotateStr}`;
 
-            // 5. ЖЕТКЕН СОҢ
+            // 6. ФИНИШ (0.5 секунд)
             setTimeout(() => {
-                returner.remove(); // Клонды өшіреміз
+                returner.remove(); 
                 
                 // Түпнұсқаны көрсетеміз
-                if (lastHiddenCard) {
-                    lastHiddenCard.style.opacity = 1;
-                    // Қызарып дірілдеу
-                    lastHiddenCard.classList.add('error-flash');
-                    setTimeout(() => {
-                        if(lastHiddenCard) lastHiddenCard.classList.remove('error-flash');
-                        lastHiddenCard = null;
-                    }, 500);
-                }
-            }, 600); // 0.6 секунд
+                targetCard.style.opacity = 1;
+                
+                // Қызарып дірілдеу
+                targetCard.classList.add('error-flash');
+                setTimeout(() => {
+                    targetCard.classList.remove('error-flash');
+                    lastHiddenCard = null;
+                }, 500);
+            }, 500);
         });
+
 
     </script>
 </body>
