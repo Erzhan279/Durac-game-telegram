@@ -319,61 +319,68 @@
                 // C. Саусақ алынды (ТАСТАУ)
                                 // 3. Саусақ алынды (ТАСТАУ)
                                 // --- АНИМАЦИЯЛЫҚ ҰШУ (КӨШІРІП АЛ) ---
-                el.addEventListener('touchend', (e) => {
+                                el.addEventListener('touchend', (e) => {
                     el.classList.remove('dragging');
                     
                     if (isDragging) {
                         const touch = e.changedTouches[0];
                         const dropRect = dropZone.getBoundingClientRect();
 
-                        // Егер үстелге (drop zone) тисе
+                        // Егер карта ҮСТЕЛГЕ (drop zone) жетсе
                         if (touch.clientY < dropRect.bottom && touch.clientY > dropRect.top) {
                             
-                            // 1. Серверге сигнал береміз
+                            // 1. СЕРВЕРГЕ ЖІБЕРЕМІЗ
                             socket.emit('playCard', originalIndex);
 
-                            // 2. 🔥 АНИМАЦИЯ ҮШІН КӨШІРМЕ ЖАСАЙМЫЗ 🔥
-                            // Себебі "updateState" келгенде түпнұсқа өшіп қалады.
-                            const flyingCard = el.cloneNode(true); 
-                            document.body.appendChild(flyingCard); // Экранға қосамыз
+                            // 2. 🔥 ПРОФЕССИОНАЛДЫ АНИМАЦИЯ (КЛОН) 🔥
+                            const clone = el.cloneNode(true);
+                            
+                            // Клонды дәл сол жерге қоямыз
+                            clone.classList.add('flying-card');
+                            clone.style.left = el.style.left;
+                            clone.style.top = el.style.top;
+                            clone.style.transform = 'scale(1.15)'; // Ұшқанда сәл үлкен
+                            clone.style.margin = '0';
+                            
+                            document.body.appendChild(clone);
 
-                            // Көшірмені дәл сол қолда тұрған жеріне қоямыз
-                            flyingCard.style.position = 'fixed';
-                            flyingCard.style.left = el.style.left;
-                            flyingCard.style.top = el.style.top;
-                            flyingCard.style.margin = '0';
-                            flyingCard.style.zIndex = 9999;
-                            flyingCard.style.transform = 'scale(1.2)'; // Үлкен күйі
-                            flyingCard.style.transition = 'all 0.4s ease-out'; // Жұмсақ ұшу
-
-                            // Түпнұсқаны жасырамыз (көзге көрінбесін)
+                            // Түпнұсқаны жасырып қоямыз (бірақ өшірмейміз!)
                             el.style.opacity = 0;
+                            lastHiddenCard = el; // Қате болса қайтару үшін сақтаймыз
 
-                            // 3. КЕЛЕСІ КАДРДА ҰШЫРАМЫЗ
+                            // 3. ҮСТЕЛГЕ ҚОНДЫРУ (Келесі кадрда)
                             requestAnimationFrame(() => {
-                                // Үстелдің ортасын есептеу
-                                const centerX = dropRect.left + dropRect.width / 2 - 30; // 30 = жарты ені
-                                const centerY = dropRect.top + dropRect.height / 2 - 45; // 45 = жарты биіктігі
+                                // Кездейсоқ бұрыш (-5 пен +5 градус арасы) - Шынайылық үшін
+                                const randomAngle = Math.floor(Math.random() * 10) - 5;
+                                
+                                // Үстелдің ортасына емес, сәл шашыраңқы түсуі үшін
+                                const randomX = Math.floor(Math.random() * 20) - 10;
+                                const randomY = Math.floor(Math.random() * 20) - 10;
 
-                                // Сол жаққа ұшсын және кішірейсін!
-                                flyingCard.style.left = centerX + 'px';
-                                flyingCard.style.top = centerY + 'px';
-                                flyingCard.style.transform = 'scale(0.65) rotate(random(10deg))'; // КІШІРЕЮ
-                                flyingCard.style.opacity = 0.8; 
+                                // Ортасын табу
+                                const destX = (dropRect.left + dropRect.width/2) - 30 + randomX;
+                                const destY = (dropRect.top + dropRect.height/2) - 45 + randomY;
+
+                                // ҰШУ!
+                                clone.style.left = destX + 'px';
+                                clone.style.top = destY + 'px';
+                                clone.style.transform = `scale(0.65) rotate(${randomAngle}deg)`;
+                                clone.style.boxShadow = '0 2px 5px rgba(0,0,0,0.3)'; // Қонғанда көлеңке азаяды
                             });
 
-                            // 4. Анимация біткен соң көшірмені өшіреміз
+                            // 4. Клонды тазалау (0.5 секундтан кейін)
                             setTimeout(() => {
-                                flyingCard.remove();
-                            }, 400);
+                                clone.remove();
+                            }, 500);
 
                         } else {
-                            // Егер үстелге тимесе -> Орнына қайту
-                            el.style.transition = 'transform 0.3s';
+                            // Егер далаға лақтырсаң -> ОРНЫНА ҚАЙТУ
+                            el.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)';
                             el.style.position = 'absolute';
                             el.style.left = ''; el.style.top = '';
-                            el.style.margin = `0 ${step}px`; // Ығысуды сақтаймыз
-                            el.style.transform = baseTransform;
+                            // Бағанағы есептеген step (ығысу) бойынша орынға қою
+                            // Егер step айнымалысы қолжетімсіз болса, жай margin қолданамыз
+                            el.style.transform = baseTransform; 
                         }
                     } else {
                         // Жай басу (Tap)
@@ -392,6 +399,7 @@
                     }
                     isDragging = false;
                 });
+
 
 
             }
