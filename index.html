@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Durak Pro Final</title>
+    <title>Durak Pro Animation</title>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <style>
         /* --- 1. НЕГІЗГІ ФОН --- */
@@ -20,7 +20,7 @@
             touch-action: none;
         }
 
-        /* --- 2. ЖОҒАРҒЫ АЙМАҚ (БОТ + КОЛОДА) --- */
+        /* --- 2. ЖОҒАРҒЫ АЙМАҚ --- */
         #bot-area {
             position: relative;
             width: 100%;
@@ -28,10 +28,10 @@
             z-index: 10;
         }
 
-        /* Боттың қолы (Жоғары көтерілген) */
+        /* Боттың қолы */
         #bot-hand {
             position: absolute;
-            top: -50px; /* Астыңғы жағын жасырамыз */
+            top: -50px; 
             left: 50%;
             transform: translateX(-50%);
             width: 260px;
@@ -48,39 +48,33 @@
             transition: transform 0.3s ease-out;
         }
 
-        /* --- 3. КОЛОДА МЕН КОЗЫРЬ (ТҮЗЕТІЛГЕН) --- */
+        /* --- 3. КОЛОДА МЕН КОЗЫРЬ --- */
         #deck-container {
             position: absolute;
-            top: 40px;  /* Боттан бөлек төменірек тұрады */
-            left: 45px; /* Сол жақтан орын қалдырамыз */
+            top: 40px;
+            left: 45px;
             width: 80px;
             height: 100px;
             z-index: 5;
         }
 
-        /* Козырь (Солға қарай қатты шығып тұрады) */
         #trump-card-el {
             position: absolute;
-            left: -35px; /* Колоданың астынан қатты шығады */
-            top: 15px;
+            left: -35px; top: 15px;
             transform: rotate(90deg);
-            z-index: 0; /* Колоданың астында */
+            z-index: 0;
             box-shadow: -2px 2px 5px rgba(0,0,0,0.3);
         }
 
-        /* Колода (Үстінде) */
         #deck-pile-el {
-            position: absolute;
-            left: 0;
-            top: 0;
-            z-index: 10; /* Ең үстінде */
+            position: absolute; left: 0; top: 0; z-index: 10;
         }
         .deck-counter {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             font-size: 22px; font-weight: bold; color: white; text-shadow: 1px 1px 2px black;
         }
 
-        /* --- 4. ҮСТЕЛ (ОРТА) --- */
+        /* --- 4. ҮСТЕЛ --- */
         #table-area {
             flex: 1;
             position: relative;
@@ -101,7 +95,7 @@
         }
         #drop-zone { position: absolute; width: 100%; height: 100%; top: 0; left: 0; }
 
-        /* --- 5. МЕНІҢ АЙМАҒЫМ (ТӨМЕН) --- */
+        /* --- 5. МЕНІҢ АЙМАҒЫМ --- */
         #my-area {
             height: 270px;
             display: flex;
@@ -132,9 +126,9 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.4);
             transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
             transform-origin: center center;
+            backface-visibility: hidden; /* Жыпылықтауды жою */
         }
 
-        /* Кішкентай карталар */
         .small-card {
             width: 60px !important;
             height: 90px !important;
@@ -153,14 +147,13 @@
         }
         .card-back * { display: none; }
 
-        /* ҮСТЕЛДЕГІ ЖҰПТАР */
         .table-pair {
             position: relative; width: 65px; height: 95px; margin: 5px 15px;
         }
         .card-attack { z-index: 1; transform: rotate(-3deg) scale(0.9); top: 0; left: 0; }
         .card-defend { z-index: 10; transform: translate(15px, 10px) rotate(8deg) scale(0.9); top: 0; left: 0; }
 
-        /* --- БАТЫРМАЛАР (БАСҚАРУ) --- */
+        /* --- БАТЫРМАЛАР --- */
         .controls {
             z-index: 1000; margin-bottom: 20px; display: flex; gap: 20px; 
             align-items: center; justify-content: center;
@@ -177,14 +170,10 @@
             color: white; overflow: hidden; min-width: 140px;
         }
         .btn:active { transform: scale(0.95); }
-        /* Сары (Алу) */
         .btn-take { background: linear-gradient(to bottom, #fbc02d, #f57f17); color: #3e2723; }
-        /* Қызыл (Бита) */
         .btn-bita { background: linear-gradient(to bottom, #e53935, #c62828); }
-        /* Жасыл (Ала берсін/Done) */
         .btn-done { background: linear-gradient(to bottom, #43a047, #2e7d32); }
 
-        /* ТАЙМЕР СЫЗЫҒЫ (Батырма ішінде) */
         .timer-line {
             position: absolute; bottom: 0; left: 0; height: 4px; width: 100%;
             background: rgba(255,255,255,0.6);
@@ -192,7 +181,6 @@
             transition: transform 1s linear;
         }
 
-        /* БОТТЫҢ ТАЙМЕРІ (Хабарлама) */
         #bot-timer-msg {
             position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%);
             background: rgba(0,0,0,0.7); color: #fff; padding: 10px 20px;
@@ -200,32 +188,39 @@
             border: 1px solid #4cd137; text-align: center;
         }
 
-        /* Блок (Алу басқанда) */
         #take-blocker {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: transparent; z-index: 2000; display: none;
         }
 
-        /* Қате эффект */
+        /* --- 🔥 АНИМАЦИЯЛАР (CSS) 🔥 --- */
         @keyframes flashRed {
             0%, 100% { border-color: red; } 50% { border-color: red; box-shadow: 0 0 20px red; }
         }
         .error-flash { animation: flashRed 0.5s ease-out; z-index: 9999 !important; }
         
-        /* Ұшу анимациясы */
-        .bot-throw { animation: botThrowAnim 0.4s ease-out backwards; }
-        @keyframes botThrowAnim { from { transform: translate(0, -200px) scale(0.5); opacity: 0; } to { opacity: 1; } }
+        /* Боттың лақтыру анимациясы */
+        .bot-throw { animation: botThrowAnim 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards; }
+        @keyframes botThrowAnim { 
+            from { transform: translate(0, -250px) scale(0.5) rotate(180deg); opacity: 0; } 
+            to { opacity: 1; } 
+        }
+
+        /* Сенің лақтыру анимацияң (үстелге түскенде) */
+        .my-throw { animation: myThrowAnim 0.3s ease-out backwards; }
+        @keyframes myThrowAnim {
+            from { transform: translate(0, 200px) scale(1.5); opacity: 0; }
+            to { opacity: 1; }
+        }
 
     </style>
 </head>
 <body>
 
     <div id="take-blocker"></div>
-
     <div id="bot-timer-msg">Бот алуға дайындалуда... <br><span id="bot-countdown">7</span></div>
 
-    <div id="deck-container">
-        </div>
+    <div id="deck-container"></div>
 
     <div id="bot-area">
         <div id="bot-hand"></div>
@@ -238,17 +233,14 @@
 
     <div id="my-area">
         <div class="controls" id="btn-controls">
-            
             <button class="btn btn-take" id="btn-take" onclick="handleTakeClick()">
                 <span id="take-text">АЛУ</span>
                 <div class="timer-line" id="take-timer-line"></div>
             </button>
-            
             <button class="btn btn-bita" id="btn-bita" onclick="handleBitaClick()">
                 <span id="bita-text">БИТА</span>
                 <div class="timer-line" id="turn-timer-line"></div>
             </button>
-
         </div>
         <div id="my-hand"></div>
     </div>
@@ -261,6 +253,10 @@
         let isGlobalDragging = false;
         let takeTimerInterval = null;
         let botTimerInterval = null;
+
+        // 🔥 КАРТАЛАРДЫҢ ЖАДЫ (MEMORY)
+        // Бұл ескі карталарды қайта анимациялаудан сақтайды
+        let knownTableCards = new Set(); 
 
         const myHandDiv = document.getElementById('my-hand');
         const botHandDiv = document.getElementById('bot-hand');
@@ -279,7 +275,6 @@
         const botTimerMsg = document.getElementById('bot-timer-msg');
         const botCountdown = document.getElementById('bot-countdown');
 
-        // --- КАРТА ЖАСАУ ---
         function createCardHTML(card) {
             const isRed = (card.suit === '♥' || card.suit === '♦');
             const cls = isRed ? 'red' : 'black';
@@ -375,7 +370,6 @@
                             returnToHand(el);
                         }
                     } else {
-                        // TAP
                         if (el.classList.contains('active')) {
                             el.classList.remove('active');
                             el.style.transition = 'transform 0.3s';
@@ -432,9 +426,6 @@
             }, 500);
         }
 
-        // --- БАТЫРМА ЛОГИКАСЫ ---
-
-        // 1. АЛУ (Мен алуым керек)
         function handleTakeClick() {
             if (btnTake.disabled) return;
             btnTake.disabled = true;
@@ -462,12 +453,9 @@
             }, 1000);
         }
 
-        // 2. БИТА / АЛА БЕРСІН
         function handleBitaClick() {
-            socket.emit('actionBita'); // Серверге "Мен біттім" дейміз
+            socket.emit('actionBita');
         }
-
-        // --- SOCKETS ---
 
         socket.on('invalidMove', () => {
             if (lastPlayedCardElement) {
@@ -486,7 +474,6 @@
             clearInterval(botTimerInterval);
             botTimerMsg.style.display = 'none';
 
-            // Батырмаларды реттеу
             if(btnTake) {
                 btnTake.disabled = false;
                 takeText.innerText = 'АЛУ';
@@ -494,47 +481,21 @@
                 takeTimerLine.style.transform = 'scaleX(1)';
             }
 
-            // БАТЫРМАЛАРДЫ КӨРСЕТУ ЛОГИКАСЫ
             btnControls.classList.remove('visible');
             btnTake.style.display = 'none';
             btnBita.style.display = 'none';
-            btnBita.className = 'btn btn-bita'; // Түсін қалпына келтіру
+            btnBita.className = 'btn btn-bita'; 
 
             if (state.attacker === 'player') {
-                // МЕН ШАБУЫЛДАМЫН
                 if (state.table.length > 0) {
-                    // Үстелде карта бар -> Бита немесе "Ала берсін"
                     btnBita.style.display = 'block';
-                    
-                    // ЕГЕР БОТ АЛУҒА ШЕШІМ ҚАБЫЛДАСА (Мұны серверден білу қиын, бірақ логика бойынша)
-                    // Біз жай ғана "Бита" дегенді өзгертеміз, егер бот жаба алмаса.
-                    // Қарапайым логика: Егер қорғаныс картасы жоқ болса (тақ сан) -> Бот алуы мүмкін
                     const isOdd = state.table.length % 2 !== 0; 
-                    if (isOdd) {
-                        // Бот әлі жаппады.
-                        bitaText.innerText = "БИТА";
-                    } else {
-                        // Бот жапты -> Бита
-                        bitaText.innerText = "БИТА";
-                    }
-                    
-                    // ЕГЕР СЕН "БОТ АЛСЫН" ДЕП ТАЛАП ЕТСЕҢ:
-                    // Бұл жерде серверден арнайы статус келмесе, біз "БИТА" деп көрсете береміз.
-                    // Бірақ сен сұрағандай "Ала берсін" батырмасы мен таймерді қосамыз.
-                    
-                    // ФЕЙК ЛОГИКА: Егер үстелде карта көп болса және жабылмаса -> Бот алады деп болжаймыз
-                    // Шынында сервер 'actionTake' жібергенде state өзгереді.
-                    // Сондықтан "Ала берсін" батырмасын "Бита"-ның орнына қолмен басуға болады.
-                    // Дизайн үшін: Егер бот жаба алмай жатса (біз білмейміз), сен "Бита" бассаң ол алады.
-                    // Мен батырманы "ЖАСЫЛ" қылып, "АЛА БЕРСІН" деп өзгертемін, егер соңғы карта жабылмаған болса.
+                    if (isOdd) bitaText.innerText = "БИТА";
+                    else bitaText.innerText = "БИТА";
                     
                     if (state.table.length > 0 && state.table.length % 2 !== 0) {
-                         // Тақ сан -> Бот жабуы керек. Егер ұзақ ойланса -> Ала берсін.
-                         // Біз жай ғана батырманы өзгертеміз
-                         btnBita.className = 'btn btn-done'; // Жасыл
+                         btnBita.className = 'btn btn-done'; 
                          bitaText.innerText = "АЛА БЕРСІН";
-                         
-                         // Боттың таймерін көрсетеміз (7 сек)
                          botTimerMsg.style.display = 'block';
                          let botSec = 7;
                          botCountdown.innerText = botSec;
@@ -547,25 +508,17 @@
                     btnControls.classList.add('visible');
                 }
             } else if (state.attacker === 'bot') {
-                // БОТ ШАБУЫЛДА -> Мен алуым керек
                 btnTake.style.display = 'block';
                 btnControls.classList.add('visible');
             }
 
-            // ЖЕҢІС/ЖЕҢІЛІС
-            if(state.winner) {
-                // Логика қалады
-            }
-
-            // 1. КОЛОДА МЕН КОЗЫРЬ (ТҮЗЕЛГЕН)
+            // 1. КОЛОДА & КОЗЫРЬ
             deckContainer.innerHTML = '';
-            // Козырь ең астында, солға шығып тұрады
             if (state.trumpCard && state.deckCount > 0) {
                 const tEl = createCard(state.trumpCard, true, 0, 0, false);
                 tEl.id = 'trump-card-el';
                 deckContainer.appendChild(tEl);
             }
-            // Колода үстінде
             if (state.deckCount > 0) {
                 const dEl = document.createElement('div');
                 dEl.className = 'card card-back small-card';
@@ -606,26 +559,49 @@
                 botHandDiv.appendChild(el);
             }
 
-            // 4. ҮСТЕЛ
+            // 4. ҮСТЕЛ (SMART RENDER - ЕСКІЛЕРДІ ҚАЙТА САЛМАЙМЫЗ)
             tableContainer.innerHTML = '';
+            
+            // Жаңадан келген карталардың тізімі (ID ретінде Value+Suit аламыз)
+            const currentTableCards = new Set();
+
             for (let i = 0; i < state.table.length; i += 2) {
                 const pairDiv = document.createElement('div');
                 pairDiv.className = 'table-pair';
+                
                 const att = state.table[i];
+                const attId = att.card.value + att.card.suit;
+                currentTableCards.add(attId);
+
                 const attEl = createCard(att.card, true, 0,0,false);
                 attEl.classList.add('card-attack');
-                if (att.owner === 'bot') attEl.classList.add('bot-throw');
+                
+                // 🔥 ЕГЕР БҰЛ КАРТА БҰРЫН БОЛМАСА -> АНИМАЦИЯ БЕРЕМІЗ
+                if (!knownTableCards.has(attId)) {
+                    if (att.owner === 'bot') attEl.classList.add('bot-throw');
+                    // Менің картамды анимацияламаймыз, себебі мен оны сүйреп әкелдім
+                }
                 pairDiv.appendChild(attEl);
 
                 if (state.table[i+1]) {
                     const def = state.table[i+1];
+                    const defId = def.card.value + def.card.suit;
+                    currentTableCards.add(defId);
+
                     const defEl = createCard(def.card, true, 0,0,false);
                     defEl.classList.add('card-defend');
-                    if (def.owner === 'bot') defEl.classList.add('bot-throw');
+                    
+                    // 🔥 ТЕК ЖАҢА КАРТАЛАРҒА АНИМАЦИЯ
+                    if (!knownTableCards.has(defId)) {
+                        if (def.owner === 'bot') defEl.classList.add('bot-throw');
+                    }
                     pairDiv.appendChild(defEl);
                 }
                 tableContainer.appendChild(pairDiv);
             }
+
+            // Есімізді жаңартамыз (Келесі жолы бұларды ескі деп тану үшін)
+            knownTableCards = currentTableCards;
         });
     </script>
 </body>
