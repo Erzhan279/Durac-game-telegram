@@ -370,67 +370,71 @@
                 // C. Саусақ алынды (ТАСТАУ)
                                 // 3. Саусақ алынды (ТАСТАУ)
                                 // --- АНИМАЦИЯЛЫҚ ҰШУ (КӨШІРІП АЛ) ---
-                                el.addEventListener('touchend', (e) => {
+                                                // --- 3. САУСАҚТЫ АЛҒАНДА (ТҮЗЕТІЛГЕН) ---
+                el.addEventListener('touchend', (e) => {
                     el.classList.remove('dragging');
                     
                     if (isDragging) {
                         const touch = e.changedTouches[0];
                         const dropRect = dropZone.getBoundingClientRect();
 
-                        // Егер карта ҮСТЕЛГЕ (drop zone) жетсе
+                        // Егер карта ҮСТЕЛГЕ жетсе
                         if (touch.clientY < dropRect.bottom && touch.clientY > dropRect.top) {
                             
-                            // 1. СЕРВЕРГЕ ЖІБЕРЕМІЗ
+                            // 1. Серверге жібереміз
                             socket.emit('playCard', originalIndex);
 
-                            // 2. 🔥 ПРОФЕССИОНАЛДЫ АНИМАЦИЯ (КЛОН) 🔥
+                            // 2. Анимация үшін КЛОН жасаймыз
                             const clone = el.cloneNode(true);
-                            
-                            // Клонды дәл сол жерге қоямыз
-                            clone.classList.add('flying-card');
-                            clone.style.left = el.style.left;
+                            // Клон дәл қолдағы орнынан бастап ұшады
+                            clone.style.position = 'fixed';
+                            clone.style.zIndex = '9999';
+                            clone.style.left = el.style.left; // Қазіргі тұрған жері
                             clone.style.top = el.style.top;
-                            clone.style.transform = 'scale(1.15)'; // Ұшқанда сәл үлкен
+                            clone.style.width = '90px';
+                            clone.style.height = '135px';
                             clone.style.margin = '0';
+                            clone.style.transform = 'scale(1.15)'; 
+                            clone.className = 'card flying-card'; // Ұшу стилі
                             
                             document.body.appendChild(clone);
 
-                            // Түпнұсқаны жасырып қоямыз (бірақ өшірмейміз!)
+                            // 3. 🔥 ЕҢ МАҢЫЗДЫ ЖЕРІ ОСЫНДА! 🔥
+                            // Түпнұсқаны жасырамыз...
                             el.style.opacity = 0;
-                            lastHiddenCard = el; // Қате болса қайтару үшін сақтаймыз
+                            lastHiddenCard = el; // Есте сақтаймыз
+                            
+                            // ЖӘНЕ ОНЫ ДЕРЕУ ОРНЫНА (ҚОЛҒА) ҚАЙТАРЫП ҚОЯМЫЗ!
+                            // Сонда "InvalidMove" болғанда, ол қолда күтіп тұрады.
+                            el.style.position = 'absolute';
+                            el.style.left = ''; 
+                            el.style.top = '';
+                            el.style.margin = ''; 
+                            // Бастапқы "Желпуіш" координатында тұрсын
+                            el.style.transform = baseTransform; 
 
-                            // 3. ҮСТЕЛГЕ ҚОНДЫРУ (Келесі кадрда)
+
+                            // 4. Клонды үстелге ұшырамыз
                             requestAnimationFrame(() => {
-                                // Кездейсоқ бұрыш (-5 пен +5 градус арасы) - Шынайылық үшін
-                                const randomAngle = Math.floor(Math.random() * 10) - 5;
-                                
-                                // Үстелдің ортасына емес, сәл шашыраңқы түсуі үшін
-                                const randomX = Math.floor(Math.random() * 20) - 10;
-                                const randomY = Math.floor(Math.random() * 20) - 10;
+                                // Үстелдің ортасы
+                                const destX = (dropRect.left + dropRect.width/2) - 30;
+                                const destY = (dropRect.top + dropRect.height/2) - 45;
+                                const randomAngle = Math.floor(Math.random() * 20) - 10;
 
-                                // Ортасын табу
-                                const destX = (dropRect.left + dropRect.width/2) - 30 + randomX;
-                                const destY = (dropRect.top + dropRect.height/2) - 45 + randomY;
-
-                                // ҰШУ!
                                 clone.style.left = destX + 'px';
                                 clone.style.top = destY + 'px';
                                 clone.style.transform = `scale(0.65) rotate(${randomAngle}deg)`;
-                                clone.style.boxShadow = '0 2px 5px rgba(0,0,0,0.3)'; // Қонғанда көлеңке азаяды
                             });
 
-                            // 4. Клонды тазалау (0.5 секундтан кейін)
-                            setTimeout(() => {
-                                clone.remove();
-                            }, 500);
+                            // 5. Клонды өшіру
+                            setTimeout(() => { clone.remove(); }, 500);
 
                         } else {
-                            // Егер далаға лақтырсаң -> ОРНЫНА ҚАЙТУ
+                            // Егер далаға лақтырсаң -> Орнына қайту
                             el.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)';
                             el.style.position = 'absolute';
                             el.style.left = ''; el.style.top = '';
-                            // Бағанағы есептеген step (ығысу) бойынша орынға қою
-                            // Егер step айнымалысы қолжетімсіз болса, жай margin қолданамыз
+                            el.style.margin = '';
                             el.style.transform = baseTransform; 
                         }
                     } else {
@@ -444,12 +448,14 @@
                                 c.style.transform = c.dataset.baseTransform;
                             });
                             el.classList.add('active');
-                            // Сәл көтерілу
-                            el.style.transform = `translate3d(${xOffset}px, ${yOffset - 30}px, 0) rotate(${angle}deg)`;
+                            el.style.transform = baseTransform.replace(/translate3d\(([^,]+),\s*([^,]+)/, (match, x, y) => {
+                                return `translate3d(${x}, ${parseFloat(y) - 30}px`;
+                            });
                         }
                     }
                     isDragging = false;
                 });
+
             }
             return el;
         }
