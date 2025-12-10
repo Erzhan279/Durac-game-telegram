@@ -422,88 +422,115 @@
             }
         });
 
-        socket.on('updateState', (state) => {
+                socket.on('updateState', (state) => {
+            // Айнымалыларды тазалау
             lastPlayedCardElement = null;
             isGlobalDragging = false;
-            
-            // ✅ БҰҒАТТЫ АШАМЫЗ (Бағдаршам ЖАСЫЛ)
             isWaitingForServer = false;
 
-            if(state.winner) updateStatus(state.winner === 'player' ? "🎉 ЖЕҢІС!" : "💀 ЖЕҢІЛІС", state.winner === 'player' ? 'gold' : 'red');
-            else if(state.attacker === 'player') updateStatus("Сенің кезегің", "#4cd137");
-            else updateStatus("Күту...", "#bbb");
+            // Статус жаңарту
+            if(state.winner) {
+                statusPill.innerText = state.winner === 'player' ? "🎉 ЖЕҢІС!" : "💀 ЖЕҢІЛІС";
+                statusPill.style.display = 'block';
+            } else if(state.attacker === 'player') {
+                statusPill.innerText = "Сенің кезегің";
+                statusPill.style.display = 'block';
+                statusPill.style.color = '#4cd137';
+            } else {
+                statusPill.style.display = 'none';
+            }
 
-            const sortedHand = state.playerHand.map((card, idx) => ({...card, originalIndex: idx}))
-                .sort((a, b) => {
-                    const isATrump = a.suit === state.trumpCard.suit;
-                    const isBTrump = b.suit === state.trumpCard.suit;
-                    const power = {'6':6, '7':7, '8':8, '9':9, '10':10, 'J':11, 'Q':12, 'K':13, 'A':14};
-                    if (isATrump && !isBTrump) return 1;
-                    if (!isATrump && isBTrump) return -1;
-                    if (a.suit === b.suit) return power[a.value] - power[b.value];
-                    return a.suit.localeCompare(b.suit);
-                });
+            // --- 1. КОЛОДА МЕН КОЗЫРЬДІ СЫЗУ ---
+            const trumpContainer = document.getElementById('trump-card-container');
+            const deckPile = document.getElementById('deck-pile');
+            const deckText = document.getElementById('deck-counter-text');
 
+            // Козырь картасы
+            trumpContainer.innerHTML = '';
+            if (state.trumpCard && state.deckCount > 0) {
+                const tCard = createCard(state.trumpCard, true, 0, 0, false);
+                // Козырьді ешқайда қозғамаймыз, ол контейнердің ішінде жатады
+                tCard.style.position = 'relative'; 
+                tCard.style.left = '0'; tCard.style.top = '0';
+                trumpContainer.appendChild(tCard);
+            } else if (state.trumpCard && state.deckCount === 0) {
+                // Колода біткенде козырьдің бейнесі (қаласаң)
+            }
+
+            // Колода (Арқасы)
+            if (state.deckCount > 0) {
+                deckPile.style.display = 'flex'; // Көрсету
+                deckText.innerText = state.deckCount;
+            } else {
+                deckPile.style.display = 'none'; // Жасыру
+            }
+
+
+            // --- 2. МЕНІҢ ҚОЛЫМ ---
             myHandDiv.innerHTML = '';
+            // Сұрыптау
+            const sortedHand = state.playerHand.map((card, idx) => ({...card, originalIndex: idx})).sort((a,b) => {
+                 const isATrump = a.suit === state.trumpCard.suit;
+                 const isBTrump = b.suit === state.trumpCard.suit;
+                 const power = {'6':6, '7':7, '8':8, '9':9, '10':10, 'J':11, 'Q':12, 'K':13, 'A':14};
+                 if (isATrump && !isBTrump) return 1;
+                 if (!isATrump && isBTrump) return -1;
+                 if (a.suit === b.suit) return power[a.value] - power[b.value];
+                 return a.suit.localeCompare(b.suit);
+            });
+
             sortedHand.forEach((c, i) => {
                 myHandDiv.appendChild(createCard(c, true, i, sortedHand.length, true, c.originalIndex));
             });
 
-                        // 1. БОТТЫҢ ҚОЛЫН ЖЕЛПУІШ ҚЫЛУ
+
+            // --- 3. БОТТЫҢ ҚОЛЫ (ТЕРІС ЖЕЛПУІШ) ---
             botHandDiv.innerHTML = '';
             const botTotal = state.botCardCount;
-            let botStep = 30; // Арасы тығыз
-            if (botTotal > 6) botStep = 20; // Карта көп болса қысылады
             
             for(let i=0; i < botTotal; i++) {
-                // Ботқа суреті жоқ (арқасы көрінетін) карта жасаймыз
-                const el = createCard(null, false, i, botTotal, false, 0); 
+                const el = createCard(null, false, i, botTotal, false, 0);
                 el.classList.add('bot-card'); // Арнайы класс
                 
-                // Желпуіш есебі (Теріс қарай)
+                // Желпуіш есебі
                 const center = (botTotal - 1) / 2;
-                const angle = (i - center) * -5; // Төмен қараған доға
-                const xOffset = (i - center) * botStep;
-                const yOffset = Math.abs(i - center) * 5; 
-                
-                // transform: scale(0.7) -> 70% кішірейтеміз (Алыста тұрғандай)
-                el.style.transform = `translate3d(${xOffset}px, ${yOffset}px, 0) rotate(${angle}deg) scale(0.7)`;
+                const spread = 20; // Карталардың арасы (тығыз)
+                const angleSpread = 3; // Бұрылу градусы
+
+                const x = (i - center) * spread;
+                const angle = (i - center) * angleSpread;
+                // Доға жасау (шеттері сәл жоғары)
+                const y = Math.abs(i - center) * 2; 
+
+                // Боттың карталары кішірек (scale 0.7) және теріс желпуіш
+                el.style.transform = `translate(${x}px, ${y}px) rotate(${angle}deg) scale(0.7)`;
                 el.style.zIndex = i;
                 
                 botHandDiv.appendChild(el);
             }
 
-            // 2. ҮСТЕЛГЕ АНИМАЦИЯ ҚОСУ
+
+            // --- 4. ҮСТЕЛ ---
             tableContainer.innerHTML = '';
             for (let i = 0; i < state.table.length; i += 2) {
                 const pairDiv = document.createElement('div');
                 pairDiv.className = 'table-pair';
                 
-                // Шабуыл картасы
                 const attackCard = state.table[i].card;
                 const attackEl = createCard(attackCard, true, 0,0,false);
                 attackEl.classList.add('card-attack'); 
-                
-                // Егер картаны БОТ тастаса -> Ұшып келсін
-                if (state.table[i].owner === 'bot') {
-                     attackEl.classList.add('animate-bot-play');
-                }
                 pairDiv.appendChild(attackEl);
 
-                // Қорғаныс картасы (егер бар болса)
                 if (state.table[i+1]) {
                     const defendCard = state.table[i+1].card;
                     const defendEl = createCard(defendCard, true, 0,0,false);
                     defendEl.classList.add('card-defend'); 
-                    
-                    // Егер қорғанысты БОТ тастаса -> Ұшып келсін
-                    if (state.table[i+1].owner === 'bot') {
-                        defendEl.classList.add('animate-bot-play');
-                    }
                     pairDiv.appendChild(defendEl);
                 }
                 tableContainer.appendChild(pairDiv);
             }
+        });
+
 
 
             trumpDiv.innerHTML = '';
