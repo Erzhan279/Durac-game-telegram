@@ -12,10 +12,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const server = http.createServer(app);
 
-// HTML файлды көрсету
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+// Ойын файлын ашу үшін жол ашамыз
+app.get('/game.html', (req, res) => {
+  res.sendFile(__dirname + '/game.html');
 });
+
 
 const io = new Server(server, { cors: { origin: "*" } });
 
