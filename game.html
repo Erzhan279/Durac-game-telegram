@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Durak Pro Coin</title>
+    <title>Durak Casino Style</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <style>
-        /* НЕГІЗГІ СТИЛЬДЕР (Өзгеріссіз қалды, тек профиль қосылды) */
+        /* --- 1. НЕГІЗГІ ФОН --- */
         body {
-            background: radial-gradient(circle at 50% 40%, #1b5e20 0%, #052207 100%);
+            background: radial-gradient(circle at 50% 40%, #0f3d0f 0%, #000000 100%);
             color: white;
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
@@ -21,36 +21,114 @@
             touch-action: none;
         }
 
-        /* --- 🔥 ПРОФИЛЬ & АҚША (ЖАҢА) --- */
+        /* --- 🔥 ЖАҢА ПРОФИЛЬ ДИЗАЙНЫ (КАЗИНО СТИЛІ) --- */
         #user-profile {
             position: absolute;
-            top: 10px; left: 10px;
+            top: 15px; left: 15px;
             z-index: 100;
             display: flex;
             align-items: center;
-            background: rgba(0,0,0,0.6);
-            padding: 5px 15px;
-            border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.2);
+            background: linear-gradient(90deg, rgba(0,0,0,0.8), rgba(0,0,0,0.4));
+            padding: 5px 20px 5px 5px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
-        .avatar {
-            width: 30px; height: 30px;
+
+        /* Аватар (Фото) */
+        .avatar-img {
+            width: 40px; height: 40px;
             border-radius: 50%;
-            background: #ffb300;
-            display: flex; justify-content: center; align-items: center;
-            font-size: 18px; margin-right: 10px;
+            border: 2px solid #ffd700;
+            object-fit: cover;
+            margin-right: 10px;
+            background: #333;
         }
+        /* Аватар (Әріп) */
+        .avatar-letter {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ffd700, #ff8c00);
+            display: flex; justify-content: center; align-items: center;
+            font-size: 20px; font-weight: bold; color: #3e2723;
+            margin-right: 10px;
+            border: 2px solid #fff;
+        }
+
         .user-info { display: flex; flex-direction: column; }
-        .user-name { font-size: 12px; font-weight: bold; color: #ddd; }
-        .user-coins { font-size: 14px; font-weight: bold; color: gold; text-shadow: 0 0 5px orange; }
+        .user-name { font-size: 13px; font-weight: bold; color: #fff; text-transform: uppercase; letter-spacing: 1px; }
+        
+        /* Тиын (Casino Chip) */
+        .coin-wrapper {
+            display: flex; align-items: center; gap: 5px;
+        }
+        .casino-chip {
+            width: 18px; height: 18px;
+            background: radial-gradient(circle, #ffd700 40%, #b8860b 100%);
+            border: 2px dashed #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 5px gold;
+        }
+        .user-coins { 
+            font-size: 15px; font-weight: 800; 
+            color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.6); 
+        }
 
-        /* ҚАЛҒАН СТИЛЬДЕР (Сенің ескі стилің) */
-        #bot-area { position: relative; width: 100%; height: 120px; z-index: 10; }
+        /* --- 🔥 GAME OVER ЭКРАНЫ (ЖЕҢІС/ЖЕҢІЛІС) --- */
+        #game-over-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 5000;
+            display: none; /* JS қосады */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .result-card {
+            background: linear-gradient(135deg, #1a1a1a, #2c2c2c);
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            border: 2px solid #444;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            width: 80%; max-width: 300px;
+            transform: scale(0.8);
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .result-emoji { font-size: 60px; margin-bottom: 10px; display: block; }
+        .result-title { font-size: 28px; font-weight: 900; margin-bottom: 5px; text-transform: uppercase; }
+        .result-msg { font-size: 14px; color: #aaa; margin-bottom: 25px; }
+
+        /* Жеңіс стилі */
+        .win-style .result-title { 
+            background: linear-gradient(to right, #ffd700, #ff8c00);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .win-style .result-card { border-color: gold; box-shadow: 0 0 30px rgba(255, 215, 0, 0.3); }
+
+        /* Жеңіліс стилі */
+        .lose-style .result-title { color: #ff5252; }
+        .lose-style .result-card { border-color: #ff5252; }
+
+        .go-btn {
+            width: 100%; padding: 15px; border-radius: 30px; border: none;
+            font-size: 16px; font-weight: bold; text-transform: uppercase; cursor: pointer;
+            margin-bottom: 10px; transition: transform 0.1s;
+        }
+        .go-btn:active { transform: scale(0.95); }
+        .btn-restart-game { background: #4caf50; color: white; box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4); }
+        .btn-home { background: #333; color: #fff; border: 1px solid #555; }
+
+        /* --- АЙМАҚТАР (Сенің ескі стилің) --- */
+        #bot-area { position: relative; width: 100%; height: 130px; z-index: 10; }
         #bot-hand { position: absolute; top: -50px; left: 50%; transform: translateX(-50%); width: 260px; height: 100%; display: flex; justify-content: center; align-items: flex-start; }
-        .bot-card { width: 70px !important; height: 105px !important; box-shadow: 0 5px 15px rgba(0,0,0,0.5) !important; transition: transform 0.3s ease-out; }
-
+        
         #deck-container { position: absolute; top: 40px; left: 45px; width: 80px; height: 100px; z-index: 5; }
-        #trump-card-el { position: absolute; left: -35px; top: 15px; transform: rotate(90deg); z-index: 0; box-shadow: -2px 2px 5px rgba(0,0,0,0.3); }
+        #trump-card-el { position: absolute; left: -35px; top: 15px; transform: rotate(90deg); z-index: 0; box-shadow: -2px 2px 5px rgba(0,0,0,0.5); }
         #deck-pile-el { position: absolute; left: 0; top: 0; z-index: 10; }
         .deck-counter { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 22px; font-weight: bold; color: white; text-shadow: 1px 1px 2px black; }
 
@@ -61,10 +139,11 @@
         #my-area { height: 270px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); z-index: 20; padding-bottom: 10px; }
         #my-hand { position: relative; width: 100%; height: 160px; display: flex; justify-content: center; align-items: flex-end; }
 
+        /* КАРТАЛАР */
         .card { width: 90px; height: 135px; background: #fff; border-radius: 8px; position: absolute; display: flex; flex-direction: column; justify-content: space-between; padding: 5px; box-sizing: border-box; border: 1px solid #999; box-shadow: 0 4px 10px rgba(0,0,0,0.4); transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); transform-origin: center center; }
-        .small-card { width: 60px !important; height: 90px !important; }
-        .small-card .val-top, .small-card .val-bot { font-size: 14px; }
-        .small-card .suit-big { font-size: 30px; }
+        .small-card, .bot-card { width: 60px !important; height: 90px !important; }
+        .bot-card { box-shadow: 0 5px 15px rgba(0,0,0,0.5) !important; }
+        
         .red { color: #d32f2f; } .black { color: #212121; }
         .val-top { font-size: 18px; font-weight: bold; line-height: 1; text-align: left;}
         .suit-big { font-size: 45px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
@@ -76,6 +155,7 @@
         .card-attack { z-index: 1; transform: rotate(-3deg) scale(0.9); top: 0; left: 0; }
         .card-defend { z-index: 10; transform: translate(15px, 10px) rotate(8deg) scale(0.9); top: 0; left: 0; }
 
+        /* БАТЫРМАЛАР */
         .controls { z-index: 1000; margin-bottom: 20px; display: flex; gap: 20px; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
         .controls.visible { opacity: 1; pointer-events: auto; }
         .btn { position: relative; padding: 12px 35px; border-radius: 25px; border: none; font-weight: bold; font-size: 15px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.5); text-transform: uppercase; letter-spacing: 1px; color: white; overflow: hidden; min-width: 140px; }
@@ -85,32 +165,47 @@
         .btn-done { background: linear-gradient(to bottom, #43a047, #2e7d32); }
 
         .timer-line { position: absolute; bottom: 0; left: 0; height: 4px; width: 100%; background: rgba(255,255,255,0.6); transform: scaleX(0); transform-origin: left; transition: transform 1s linear; }
+        
         #bot-timer-msg { position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.7); color: #fff; padding: 10px 20px; border-radius: 20px; font-weight: bold; display: none; z-index: 100; border: 1px solid #4cd137; text-align: center; }
+        #take-blocker { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: transparent; z-index: 2000; display: none; }
         
         #discard-pile { position: absolute; right: -40px; top: 45%; width: 100px; height: 140px; transform: translateY(-50%) rotate(-15deg); z-index: 1; background: rgba(0,0,0,0.1); border-radius: 8px;}
         .discarded-card { position: absolute; width: 70px; height: 105px; background: repeating-linear-gradient(45deg, #b00, #b00 5px, #fff 5px, #fff 6px); border: 2px solid white; border-radius: 6px; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); }
-        
-        #take-blocker { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: transparent; z-index: 2000; display: none; }
 
+        /* АНИМАЦИЯЛАР */
         .fly-card { position: fixed !important; z-index: 9999 !important; transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1) !important; }
         .error-flash { animation: flashRed 0.5s ease-out; z-index: 9999 !important; }
         @keyframes flashRed { 0%, 100% { border-color: red; } 50% { border-color: red; box-shadow: 0 0 20px red; } }
         .bot-throw { animation: botThrowAnim 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards; }
         @keyframes botThrowAnim { from { transform: translate(0, -250px) scale(0.5); opacity: 0; } to { opacity: 1; } }
-
-        /* ЖЕҢІС КЕЗІНДЕГІ АНИМАЦИЯ */
-        @keyframes coinPop { 0% { transform: scale(1); } 50% { transform: scale(1.5); color: #fff; } 100% { transform: scale(1); } }
-        .coin-win { animation: coinPop 0.5s ease-out; }
+        
+        @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
     </style>
 </head>
 <body>
 
     <div id="user-profile">
-        <div class="avatar">👤</div>
+        <div id="avatar-container">
+            </div>
         <div class="user-info">
             <div class="user-name" id="ui-username">Guest</div>
-            <div class="user-coins" id="ui-coins">💰 0</div>
+            <div class="coin-wrapper">
+                <div class="casino-chip"></div>
+                <div class="user-coins" id="ui-coins">0</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-over-screen">
+        <div class="result-card" id="result-card">
+            <span class="result-emoji" id="res-emoji">🏆</span>
+            <div class="result-title" id="res-title">ЖЕҢІС!</div>
+            <div class="result-msg" id="res-msg">Сіз 10 тиын ұтып алдыңыз!</div>
+            
+            <button class="go-btn btn-restart-game" onclick="restartGame()">🔄 ҚАЙТА ОЙНАУ</button>
+            <button class="go-btn btn-home" onclick="goToMenu()">🏠 МӘЗІРГЕ ШЫҒУ</button>
         </div>
     </div>
 
@@ -121,10 +216,7 @@
     <div id="discard-pile"></div>
 
     <div id="bot-area"><div id="bot-hand"></div></div>
-    <div id="table-area">
-        <div id="drop-zone"></div>
-        <div id="cards-on-table"></div>
-    </div>
+    <div id="table-area"><div id="drop-zone"></div><div id="cards-on-table"></div></div>
 
     <div id="my-area">
         <div class="controls" id="btn-controls">
@@ -142,17 +234,32 @@
 
     <script>
         const socket = io();
-        const tg = window.Telegram.WebApp; // Telegram объектісі
-
-        // Телеграмды толық экранға ашу
+        const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // 1. АВТОРИЗАЦИЯ ЖІБЕРУ
+        // 1. АВТОРИЗАЦИЯ ЖӘНЕ АВАТАР
         const user = tg.initDataUnsafe.user;
-        const userData = user ? { id: user.id, first_name: user.first_name } : null;
+        const userData = user ? { id: user.id, first_name: user.first_name, photo_url: user.photo_url } : null;
         
-        socket.emit('login', userData); // Серверге "Мен келдім" дейміз
+        // Профильді орнату
+        const uiUsername = document.getElementById('ui-username');
+        const avatarContainer = document.getElementById('avatar-container');
+        
+        if (userData) {
+            uiUsername.innerText = userData.first_name;
+            if (userData.photo_url) {
+                avatarContainer.innerHTML = `<img src="${userData.photo_url}" class="avatar-img">`;
+            } else {
+                let letter = userData.first_name.charAt(0).toUpperCase();
+                avatarContainer.innerHTML = `<div class="avatar-letter">${letter}</div>`;
+            }
+        } else {
+            avatarContainer.innerHTML = `<div class="avatar-letter">G</div>`;
+        }
 
+        socket.emit('login', userData);
+
+        // АЙНЫМАЛЫЛАР
         let lastPlayedCardElement = null;
         let isWaitingForServer = false;
         let isGlobalDragging = false;
@@ -161,7 +268,6 @@
         let knownTableCards = new Set(); 
         let prevTableData = []; 
 
-        // Элементтер
         const myHandDiv = document.getElementById('my-hand');
         const botHandDiv = document.getElementById('bot-hand');
         const tableContainer = document.getElementById('cards-on-table');
@@ -177,10 +283,41 @@
         const bitaText = document.getElementById('bita-text');
         const botTimerMsg = document.getElementById('bot-timer-msg');
         const botCountdown = document.getElementById('bot-countdown');
-        
-        // UI элементтері
-        const uiUsername = document.getElementById('ui-username');
         const uiCoins = document.getElementById('ui-coins');
+        
+        // Game Over Элементтері
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const resCard = document.getElementById('result-card');
+        const resEmoji = document.getElementById('res-emoji');
+        const resTitle = document.getElementById('res-title');
+        const resMsg = document.getElementById('res-msg');
+
+        // --- ФУНКЦИЯЛАР ---
+        function restartGame() {
+            socket.emit('restart');
+            gameOverScreen.style.display = 'none';
+        }
+
+        function goToMenu() {
+            window.location.href = '/'; // Басты бетке (menu) қайту
+        }
+
+        function showGameOver(winner) {
+            gameOverScreen.style.display = 'flex';
+            if (winner === 'player') {
+                resCard.classList.remove('lose-style');
+                resCard.classList.add('win-style');
+                resEmoji.innerText = '🏆';
+                resTitle.innerText = 'ЖЕҢІС!';
+                resMsg.innerText = 'Құттықтаймыз! +10 💰';
+            } else {
+                resCard.classList.remove('win-style');
+                resCard.classList.add('lose-style');
+                resEmoji.innerText = '😢';
+                resTitle.innerText = 'ЖЕҢІЛІС';
+                resMsg.innerText = 'Келесі жолы жолыңыз болады!';
+            }
+        }
 
         function createCardHTML(card) {
             const isRed = (card.suit === '♥' || card.suit === '♦');
@@ -378,18 +515,17 @@
         });
 
         socket.on('updateState', (state) => {
-            // 🔥 АҚПАРАТТЫ ЖАҢАРТУ (АТЫ ЖӘНЕ АҚША)
+            // 🔥 АҚПАРАТТЫ ЖАҢАРТУ
             if (state.user) {
-                uiUsername.innerText = state.user.name;
-                uiCoins.innerText = `💰 ${state.user.coins}`;
+                uiCoins.innerText = `${state.user.coins}`;
             }
 
-            if (state.winner === 'player') {
-                uiCoins.classList.add('coin-win'); // Анимация
-                setTimeout(() => uiCoins.classList.remove('coin-win'), 1000);
+            if (state.winner) {
+                // Жеңіс экранын шығару
+                showGameOver(state.winner);
+                return; // Ойын тоқтады
             }
 
-            // Анимация логикасы (Take/Discard)
             if (prevTableData.length > 0 && state.table.length === 0) {
                 const myNewCards = state.playerHand.map(c => c.value + c.suit);
                 const tableCardIds = prevTableData.map(item => item.card.value + item.card.suit);
