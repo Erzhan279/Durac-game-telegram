@@ -1,3 +1,8 @@
+// ... server.js кодының соңы ...
+
+// 👇 ОСЫ ЖОЛДЫ ҚОС: Бұл bot.js файлын іздеп тауып, іске қосады
+require('./bot'); 
+
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
