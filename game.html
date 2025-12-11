@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Durak Final Pro</title>
+    <title>Durak Pro Coin</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <style>
-        /* --- 1. ФОН --- */
+        /* НЕГІЗГІ СТИЛЬДЕР (Өзгеріссіз қалды, тек профиль қосылды) */
         body {
             background: radial-gradient(circle at 50% 40%, #1b5e20 0%, #052207 100%);
             color: white;
@@ -20,194 +21,106 @@
             touch-action: none;
         }
 
-        /* --- 2. ЖОҒАРЫ (БОТ) --- */
-        #bot-area {
-            position: relative;
-            width: 100%;
-            height: 130px;
-            z-index: 10;
-        }
-        #bot-hand {
+        /* --- 🔥 ПРОФИЛЬ & АҚША (ЖАҢА) --- */
+        #user-profile {
             position: absolute;
-            top: -50px; /* Астыңғы жағын жасырамыз */
-            left: 50%;
-            transform: translateX(-50%);
-            width: 260px;
-            height: 100%;
+            top: 10px; left: 10px;
+            z-index: 100;
             display: flex;
-            justify-content: center;
-            align-items: flex-start;
-        }
-        .bot-card {
-            width: 70px !important;
-            height: 105px !important;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5) !important;
-            transition: transform 0.3s ease-out;
-        }
-
-        /* --- 3. КОЛОДА МЕН КОЗЫРЬ --- */
-        #deck-container {
-            position: absolute;
-            top: 40px;
-            left: 45px;
-            width: 80px;
-            height: 100px;
-            z-index: 5;
-        }
-        #trump-card-el {
-            position: absolute;
-            left: -35px; top: 15px;
-            transform: rotate(90deg);
-            z-index: 0;
-            box-shadow: -2px 2px 5px rgba(0,0,0,0.3);
-        }
-        #deck-pile-el {
-            position: absolute; left: 0; top: 0; z-index: 10;
-        }
-        .deck-counter {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            font-size: 22px; font-weight: bold; color: white; text-shadow: 1px 1px 2px black;
-        }
-
-        /* --- 4. ҮСТЕЛ --- */
-        #table-area {
-            flex: 1;
-            position: relative;
-            width: 100%;
-            display: flex;
-            justify-content: center;
             align-items: center;
-            z-index: 6;
+            background: rgba(0,0,0,0.6);
+            padding: 5px 15px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
         }
-        #cards-on-table {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            pointer-events: none;
+        .avatar {
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            background: #ffb300;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 18px; margin-right: 10px;
         }
+        .user-info { display: flex; flex-direction: column; }
+        .user-name { font-size: 12px; font-weight: bold; color: #ddd; }
+        .user-coins { font-size: 14px; font-weight: bold; color: gold; text-shadow: 0 0 5px orange; }
+
+        /* ҚАЛҒАН СТИЛЬДЕР (Сенің ескі стилің) */
+        #bot-area { position: relative; width: 100%; height: 120px; z-index: 10; }
+        #bot-hand { position: absolute; top: -50px; left: 50%; transform: translateX(-50%); width: 260px; height: 100%; display: flex; justify-content: center; align-items: flex-start; }
+        .bot-card { width: 70px !important; height: 105px !important; box-shadow: 0 5px 15px rgba(0,0,0,0.5) !important; transition: transform 0.3s ease-out; }
+
+        #deck-container { position: absolute; top: 40px; left: 45px; width: 80px; height: 100px; z-index: 5; }
+        #trump-card-el { position: absolute; left: -35px; top: 15px; transform: rotate(90deg); z-index: 0; box-shadow: -2px 2px 5px rgba(0,0,0,0.3); }
+        #deck-pile-el { position: absolute; left: 0; top: 0; z-index: 10; }
+        .deck-counter { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 22px; font-weight: bold; color: white; text-shadow: 1px 1px 2px black; }
+
+        #table-area { flex: 1; position: relative; width: 100%; display: flex; justify-content: center; align-items: center; z-index: 6; }
+        #cards-on-table { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; pointer-events: none; }
         #drop-zone { position: absolute; width: 100%; height: 100%; top: 0; left: 0; }
 
-        /* --- 5. ТӨМЕН (МЕН) --- */
-        #my-area {
-            height: 270px;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            align-items: center;
-            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
-            z-index: 20;
-            padding-bottom: 10px;
-        }
-        #my-hand {
-            position: relative;
-            width: 100%;
-            height: 160px;
-            display: flex;
-            justify-content: center;
-            align-items: flex-end;
-        }
+        #my-area { height: 270px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); z-index: 20; padding-bottom: 10px; }
+        #my-hand { position: relative; width: 100%; height: 160px; display: flex; justify-content: center; align-items: flex-end; }
 
-        /* --- КАРТА СТИЛІ --- */
-        .card {
-            width: 90px; height: 135px;
-            background: #fff; border-radius: 8px;
-            position: absolute;
-            display: flex; flex-direction: column; justify-content: space-between;
-            padding: 5px; box-sizing: border-box;
-            border: 1px solid #999;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-            transform-origin: center center;
-        }
+        .card { width: 90px; height: 135px; background: #fff; border-radius: 8px; position: absolute; display: flex; flex-direction: column; justify-content: space-between; padding: 5px; box-sizing: border-box; border: 1px solid #999; box-shadow: 0 4px 10px rgba(0,0,0,0.4); transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); transform-origin: center center; }
         .small-card { width: 60px !important; height: 90px !important; }
         .small-card .val-top, .small-card .val-bot { font-size: 14px; }
         .small-card .suit-big { font-size: 30px; }
-
         .red { color: #d32f2f; } .black { color: #212121; }
         .val-top { font-size: 18px; font-weight: bold; line-height: 1; text-align: left;}
         .suit-big { font-size: 45px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
         .val-bot { font-size: 18px; font-weight: bold; line-height: 1; text-align: left; transform: rotate(180deg); }
-
-        .card-back {
-            background: repeating-linear-gradient(45deg, #b00, #b00 10px, #fff 10px, #fff 12px);
-            border: 2px solid white;
-        }
+        .card-back { background: repeating-linear-gradient(45deg, #b00, #b00 10px, #fff 10px, #fff 12px); border: 2px solid white; }
         .card-back * { display: none; }
 
-        .table-pair {
-            position: relative; width: 65px; height: 95px; margin: 5px 15px;
-        }
+        .table-pair { position: relative; width: 65px; height: 95px; margin: 5px 15px; }
         .card-attack { z-index: 1; transform: rotate(-3deg) scale(0.9); top: 0; left: 0; }
         .card-defend { z-index: 10; transform: translate(15px, 10px) rotate(8deg) scale(0.9); top: 0; left: 0; }
 
-        /* --- БАТЫРМАЛАР --- */
-        .controls {
-            z-index: 1000; margin-bottom: 20px; display: flex; gap: 20px; 
-            align-items: center; justify-content: center;
-            opacity: 0; pointer-events: none; transition: opacity 0.3s;
-        }
+        .controls { z-index: 1000; margin-bottom: 20px; display: flex; gap: 20px; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
         .controls.visible { opacity: 1; pointer-events: auto; }
-
-        .btn {
-            position: relative; padding: 12px 35px; border-radius: 25px; border: none;
-            font-weight: bold; font-size: 15px; cursor: pointer;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-            text-transform: uppercase; letter-spacing: 1px;
-            color: white; overflow: hidden; min-width: 140px;
-        }
+        .btn { position: relative; padding: 12px 35px; border-radius: 25px; border: none; font-weight: bold; font-size: 15px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.5); text-transform: uppercase; letter-spacing: 1px; color: white; overflow: hidden; min-width: 140px; }
         .btn:active { transform: scale(0.95); }
         .btn-take { background: linear-gradient(to bottom, #fbc02d, #f57f17); color: #3e2723; }
         .btn-bita { background: linear-gradient(to bottom, #e53935, #b71c1c); }
         .btn-done { background: linear-gradient(to bottom, #43a047, #2e7d32); }
 
-        .timer-line {
-            position: absolute; bottom: 0; left: 0; height: 4px; width: 100%;
-            background: rgba(255,255,255,0.6);
-            transform: scaleX(0); transform-origin: left;
-            transition: transform 1s linear;
-        }
+        .timer-line { position: absolute; bottom: 0; left: 0; height: 4px; width: 100%; background: rgba(255,255,255,0.6); transform: scaleX(0); transform-origin: left; transition: transform 1s linear; }
+        #bot-timer-msg { position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.7); color: #fff; padding: 10px 20px; border-radius: 20px; font-weight: bold; display: none; z-index: 100; border: 1px solid #4cd137; text-align: center; }
+        
+        #discard-pile { position: absolute; right: -40px; top: 45%; width: 100px; height: 140px; transform: translateY(-50%) rotate(-15deg); z-index: 1; background: rgba(0,0,0,0.1); border-radius: 8px;}
+        .discarded-card { position: absolute; width: 70px; height: 105px; background: repeating-linear-gradient(45deg, #b00, #b00 5px, #fff 5px, #fff 6px); border: 2px solid white; border-radius: 6px; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); }
+        
+        #take-blocker { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: transparent; z-index: 2000; display: none; }
 
-        #bot-timer-msg {
-            position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.7); color: #fff; padding: 10px 20px;
-            border-radius: 20px; font-weight: bold; display: none; z-index: 100;
-            border: 1px solid #4cd137; text-align: center;
-        }
-
-        /* --- БИТА (ОҢ ЖАҚ) --- */
-        #discard-pile {
-            position: absolute; right: -40px; top: 45%;
-            width: 100px; height: 140px;
-            transform: translateY(-50%) rotate(-15deg); z-index: 1;
-        }
-        .discarded-card {
-            position: absolute; width: 70px; height: 105px;
-            background: repeating-linear-gradient(45deg, #b00, #b00 5px, #fff 5px, #fff 6px);
-            border: 2px solid white; border-radius: 6px;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
-        }
-
-        /* --- АНИМАЦИЯЛАР --- */
-        .fly-card {
-            position: fixed !important; z-index: 9999 !important;
-            transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1) !important;
-        }
+        .fly-card { position: fixed !important; z-index: 9999 !important; transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1) !important; }
         .error-flash { animation: flashRed 0.5s ease-out; z-index: 9999 !important; }
         @keyframes flashRed { 0%, 100% { border-color: red; } 50% { border-color: red; box-shadow: 0 0 20px red; } }
-        
         .bot-throw { animation: botThrowAnim 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards; }
         @keyframes botThrowAnim { from { transform: translate(0, -250px) scale(0.5); opacity: 0; } to { opacity: 1; } }
+
+        /* ЖЕҢІС КЕЗІНДЕГІ АНИМАЦИЯ */
+        @keyframes coinPop { 0% { transform: scale(1); } 50% { transform: scale(1.5); color: #fff; } 100% { transform: scale(1); } }
+        .coin-win { animation: coinPop 0.5s ease-out; }
 
     </style>
 </head>
 <body>
 
+    <div id="user-profile">
+        <div class="avatar">👤</div>
+        <div class="user-info">
+            <div class="user-name" id="ui-username">Guest</div>
+            <div class="user-coins" id="ui-coins">💰 0</div>
+        </div>
+    </div>
+
+    <div id="take-blocker"></div>
     <div id="bot-timer-msg">Бот алуға дайындалуда... <br><span id="bot-countdown">7</span></div>
+
     <div id="deck-container"></div>
-    <div id="discard-pile"></div> <div id="bot-area"><div id="bot-hand"></div></div>
+    <div id="discard-pile"></div>
+
+    <div id="bot-area"><div id="bot-hand"></div></div>
     <div id="table-area">
         <div id="drop-zone"></div>
         <div id="cards-on-table"></div>
@@ -229,32 +142,45 @@
 
     <script>
         const socket = io();
+        const tg = window.Telegram.WebApp; // Telegram объектісі
+
+        // Телеграмды толық экранға ашу
+        tg.expand();
+
+        // 1. АВТОРИЗАЦИЯ ЖІБЕРУ
+        const user = tg.initDataUnsafe.user;
+        const userData = user ? { id: user.id, first_name: user.first_name } : null;
         
+        socket.emit('login', userData); // Серверге "Мен келдім" дейміз
+
         let lastPlayedCardElement = null;
         let isWaitingForServer = false;
         let isGlobalDragging = false;
         let takeTimerInterval = null;
         let botTimerInterval = null;
-        
-        // 🔥 ЕСКІ АҚПАРАТТАРДЫ САҚТАУ (Салыстыру үшін)
         let knownTableCards = new Set(); 
         let prevTableData = []; 
 
+        // Элементтер
         const myHandDiv = document.getElementById('my-hand');
         const botHandDiv = document.getElementById('bot-hand');
         const tableContainer = document.getElementById('cards-on-table');
         const dropZone = document.getElementById('drop-zone');
         const deckContainer = document.getElementById('deck-container');
         const discardPile = document.getElementById('discard-pile');
-        
         const btnControls = document.getElementById('btn-controls');
         const btnTake = document.getElementById('btn-take');
         const btnBita = document.getElementById('btn-bita');
         const takeText = document.getElementById('take-text');
         const takeTimerLine = document.getElementById('take-timer-line');
+        const takeBlocker = document.getElementById('take-blocker');
         const bitaText = document.getElementById('bita-text');
         const botTimerMsg = document.getElementById('bot-timer-msg');
         const botCountdown = document.getElementById('bot-countdown');
+        
+        // UI элементтері
+        const uiUsername = document.getElementById('ui-username');
+        const uiCoins = document.getElementById('ui-coins');
 
         function createCardHTML(card) {
             const isRed = (card.suit === '♥' || card.suit === '♦');
@@ -381,42 +307,25 @@
             }, 500);
         }
 
-        // 🔥 КАРТАНЫ ҰШЫРУ АНИМАЦИЯСЫ (TABLE -> TARGET)
         function animateTransfer(targetDiv, isDiscard = false) {
-            // Үстелдегі барлық картаны клондап ұшырамыз
             const cards = tableContainer.querySelectorAll('.card');
             if(cards.length === 0) return;
-
             const targetRect = targetDiv.getBoundingClientRect();
-
             cards.forEach(card => {
                 const clone = card.cloneNode(true);
                 clone.classList.add('fly-card');
                 const rect = card.getBoundingClientRect();
-                clone.style.left = rect.left + 'px';
-                clone.style.top = rect.top + 'px';
-                clone.style.width = rect.width + 'px';
-                clone.style.height = rect.height + 'px';
-                clone.style.transform = 'none'; 
-                clone.className = 'card small-card fly-card'; // Стилін сақтау
-                
-                // Бита болса, артқы жағын көрсетеміз
-                if (isDiscard) {
-                    clone.innerHTML = '';
-                    clone.classList.add('card-back');
-                }
-
+                clone.style.left = rect.left + 'px'; clone.style.top = rect.top + 'px';
+                clone.style.width = rect.width + 'px'; clone.style.height = rect.height + 'px';
+                clone.style.transform = 'none'; clone.className = 'card small-card fly-card'; 
+                if (isDiscard) { clone.innerHTML = ''; clone.classList.add('card-back'); }
                 document.body.appendChild(clone);
-
                 requestAnimationFrame(() => {
-                    // Қайда ұшу керек?
                     if (isDiscard) {
-                        // Битаға (Оң жақ)
                         clone.style.left = (targetRect.left + 10) + 'px';
                         clone.style.top = (targetRect.top + 10) + 'px';
                         clone.style.transform = `rotate(${Math.random() * 360}deg) scale(0.5)`;
                     } else {
-                        // Қолға (Мен немесе Бот)
                         clone.style.left = (targetRect.left + targetRect.width/2 - 30) + 'px';
                         clone.style.top = (targetRect.top + targetRect.height/2 - 45) + 'px';
                         clone.style.transform = `scale(0.5)`;
@@ -425,8 +334,6 @@
                 });
                 setTimeout(() => clone.remove(), 600);
             });
-
-            // Битаға визуалды карта қосу
             if (isDiscard) {
                 const pileCard = document.createElement('div');
                 pileCard.className = 'discarded-card';
@@ -436,26 +343,23 @@
             }
         }
 
-        // --- БАТЫРМАЛАР ---
         function handleTakeClick() {
             if (btnTake.disabled) return;
             btnTake.disabled = true;
-            
+            takeBlocker.style.display = 'block'; 
             let seconds = 5;
             takeText.innerText = `Күту... ${seconds}`;
             takeTimerLine.style.transform = 'scaleX(1)';
             takeTimerLine.style.transition = 'transform 5s linear';
             requestAnimationFrame(() => { takeTimerLine.style.transform = 'scaleX(0)'; });
-
             takeTimerInterval = setInterval(() => {
                 seconds--;
-                if (seconds > 0) {
-                    takeText.innerText = `Күту... ${seconds}`;
-                } else {
+                if (seconds > 0) { takeText.innerText = `Күту... ${seconds}`; } 
+                else {
                     clearInterval(takeTimerInterval);
                     socket.emit('actionTake');
-                    // Батырманы жабамыз
                     btnTake.disabled = false;
+                    takeBlocker.style.display = 'none';
                     takeText.innerText = 'АЛУ';
                     takeTimerLine.style.transition = 'none';
                     takeTimerLine.style.transform = 'scaleX(1)';
@@ -463,9 +367,7 @@
             }, 1000);
         }
 
-        function handleBitaClick() {
-            socket.emit('actionBita');
-        }
+        function handleBitaClick() { socket.emit('actionBita'); }
 
         socket.on('invalidMove', () => {
             if (lastPlayedCardElement) {
@@ -476,59 +378,30 @@
         });
 
         socket.on('updateState', (state) => {
-            // 🔥 АНИМАЦИЯНЫ АНЫҚТАУ (КІМ АЛДЫ?)
-            // 1. Егер үстел толы болып, қазір бос болса -> Демек біреу алды немесе бита
-            if (prevTableData.length > 0 && state.table.length === 0) {
-                
-                // Тексереміз: Менің қолымда жаңа карталар бар ма? (үстелде болған)
-                const myNewCards = state.playerHand.map(c => c.value + c.suit);
-                const tableCardIds = prevTableData.map(item => item.card.value + item.card.suit);
-                
-                // Егер үстелдегі карталардың бірі менің қолымда пайда болса -> МЕН АЛДЫМ
-                const iTook = tableCardIds.some(id => myNewCards.includes(id));
-                
-                if (iTook) {
-                    animateTransfer(myHandDiv, false); // Маған ұшыру
-                } else {
-                    // Егер мен алмасам -> Бот алды ма, әлде Бита ма?
-                    // Егер бот шабуылдап, мен алсам -> жоғарыда iTook = true болады.
-                    // Егер мен шабуылдап, бот алса -> Бита емес.
-                    
-                    // Бита екенін қалай білеміз?
-                    // Егер боттың карта саны (бұрынғы + үстелдегі) шамалас болса -> Бот алды.
-                    // Қарапайым логика: Мен алмасам, карталар кайда кетті?
-                    // Серверде "Бита" болса turn ауысады.
-                    
-                    // Біз "АЛА БЕРСІН" бассақ немесе Бот алса -> Ботқа ұшырамыз
-                    // Егер turn ауысса (және ешкім алмаса) -> Бита.
-                    
-                    // Қарапайым: Егер боттың карта саны күрт өссе -> Бот алды
-                    // Бірақ deck-тен де алуы мүмкін.
-                    // Ең дұрысы: Егер бита болса -> Оңға. Басқа жағдайда -> Ботқа.
-                    // Менде "actionTake" флагы жоқ.
-                    
-                    // Визуалды шешім: "АЛА БЕРСІН" басылса -> Ботқа. "БИТА" болса -> Оңға.
-                    // Қазірше әдемілік үшін: Егер менің кезегім келсе (attack='player') -> Бита (Оңға).
-                    // Егер бот шабуылдаса -> Ботқа.
-                    
-                    if (state.attacker === 'player') {
-                        // Егер мен енді шабуылдайтын болсам, демек алдыңғы раунд Бита болды
-                        // НЕМЕСЕ мен жаңа ғана "Ала берсін" бастым (бот алды).
-                        // Мұны ажырату қиын.
-                        // Әдемі болу үшін БАРЛЫҒЫН БИТАҒА (ОҢҒА) ЖІБЕРЕМІЗ.
-                        animateTransfer(discardPile, true); 
-                    } else {
-                        // Бот шабуылдаса -> Демек мен алдым (жоғарыда қаралды) немесе Бита.
-                        animateTransfer(discardPile, true);
-                    }
-                }
+            // 🔥 АҚПАРАТТЫ ЖАҢАРТУ (АТЫ ЖӘНЕ АҚША)
+            if (state.user) {
+                uiUsername.innerText = state.user.name;
+                uiCoins.innerText = `💰 ${state.user.coins}`;
             }
 
-            // Деректерді жаңарту
+            if (state.winner === 'player') {
+                uiCoins.classList.add('coin-win'); // Анимация
+                setTimeout(() => uiCoins.classList.remove('coin-win'), 1000);
+            }
+
+            // Анимация логикасы (Take/Discard)
+            if (prevTableData.length > 0 && state.table.length === 0) {
+                const myNewCards = state.playerHand.map(c => c.value + c.suit);
+                const tableCardIds = prevTableData.map(item => item.card.value + item.card.suit);
+                const iTook = tableCardIds.some(id => myNewCards.includes(id));
+                if (iTook) animateTransfer(myHandDiv, false);
+                else animateTransfer(discardPile, true);
+            }
             prevTableData = state.table;
             lastPlayedCardElement = null;
             isGlobalDragging = false;
             isWaitingForServer = false;
+            takeBlocker.style.display = 'none';
             clearInterval(takeTimerInterval);
             clearInterval(botTimerInterval);
             botTimerMsg.style.display = 'none';
@@ -548,11 +421,8 @@
             if (state.attacker === 'player') {
                 if (state.table.length > 0) {
                     btnBita.style.display = 'block';
-                    const isOdd = state.table.length % 2 !== 0; 
                     bitaText.innerText = "БИТА";
-                    
                     if (state.table.length > 0 && state.table.length % 2 !== 0) {
-                         // Бот жаба алмады -> Ала берсін
                          btnBita.className = 'btn btn-done'; 
                          bitaText.innerText = "АЛА БЕРСІН";
                          botTimerMsg.style.display = 'block';
@@ -571,12 +441,10 @@
                 btnControls.classList.add('visible');
             }
 
-            // КОЛОДА & КОЗЫРЬ
             deckContainer.innerHTML = '';
             if (state.trumpCard && state.deckCount > 0) {
                 const tEl = createCard(state.trumpCard, true, 0, 0, false);
-                tEl.id = 'trump-card-el';
-                deckContainer.appendChild(tEl);
+                tEl.id = 'trump-card-el'; deckContainer.appendChild(tEl);
             }
             if (state.deckCount > 0) {
                 const dEl = document.createElement('div');
@@ -586,7 +454,6 @@
                 deckContainer.appendChild(dEl);
             }
 
-            // МЕНІҢ ҚОЛЫМ
             myHandDiv.innerHTML = '';
             const sortedHand = state.playerHand.map((c, i) => ({...c, idx: i})).sort((a,b) => {
                  const isATrump = a.suit === state.trumpCard.suit;
@@ -601,12 +468,10 @@
                 myHandDiv.appendChild(createCard(c, true, i, sortedHand.length, true, c.idx));
             });
 
-            // БОТТЫҢ ҚОЛЫ
             botHandDiv.innerHTML = '';
             const botTotal = state.botCardCount;
             let botStep = 25;
             if (botTotal > 8) botStep = 15;
-
             for(let i=0; i < botTotal; i++) {
                 const el = createCard(null, false, i, botTotal, false, 0, true);
                 const center = (botTotal - 1) / 2;
@@ -618,21 +483,16 @@
                 botHandDiv.appendChild(el);
             }
 
-            // ҮСТЕЛ (SMART RENDER)
             tableContainer.innerHTML = '';
             const currentTableCards = new Set();
-
             for (let i = 0; i < state.table.length; i += 2) {
                 const pairDiv = document.createElement('div');
                 pairDiv.className = 'table-pair';
-                
                 const att = state.table[i];
                 const attId = att.card.value + att.card.suit;
                 currentTableCards.add(attId);
-
                 const attEl = createCard(att.card, true, 0,0,false);
                 attEl.classList.add('card-attack');
-                
                 if (!knownTableCards.has(attId)) {
                     if (att.owner === 'bot') attEl.classList.add('bot-throw');
                 }
@@ -642,10 +502,8 @@
                     const def = state.table[i+1];
                     const defId = def.card.value + def.card.suit;
                     currentTableCards.add(defId);
-
                     const defEl = createCard(def.card, true, 0,0,false);
                     defEl.classList.add('card-defend');
-                    
                     if (!knownTableCards.has(defId)) {
                         if (def.owner === 'bot') defEl.classList.add('bot-throw');
                     }
