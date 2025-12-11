@@ -6,33 +6,29 @@ const path = require('path');
 
 const app = express();
 app.use(cors());
-
-// СУРЕТТЕР МЕН СТИЛЬДЕРДІ АШУ (ӨЗГЕРІССІЗ)
 app.use(express.static(path.join(__dirname, 'public')));
 
 const server = http.createServer(app);
 
-// Ойын файлын ашу үшін жол ашамыз
+// Ойын файлын ашу
 app.get('/game.html', (req, res) => {
   res.sendFile(__dirname + '/game.html');
 });
-
 
 const io = new Server(server, { cors: { origin: "*" } });
 
 // --- ОЙЫН ДЕРЕКТЕРІ ---
 const suits = ['♥', '♦', '♣', '♠'];
 const values = ['6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
-// Картаның күші (Логика үшін керек)
 const power = { '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14 };
 
 let game = {
     deck: [], playerHand: [], botHand: [], 
-    table: [], // Құрылымы: [{ card: {...}, owner: 'player' }] (СЕНІҢ ФОРМАТЫҢ)
+    table: [], 
     trumpCard: null, attacker: 'player', winner: null
 };
 
-// 1. Колода жасау
+// 1. Колода жасау (Shuffle)
 function createDeck() {
     let deck = [];
     for (let s of suits) {
@@ -41,160 +37,179 @@ function createDeck() {
     return deck.sort(() => Math.random() - 0.5);
 }
 
-// 2. Ойынды бастау
+// 2. Ойынды бастау (Козырь логикасы осында)
 function startGame() {
     game.deck = createDeck();
-    game.trumpCard = game.deck[game.deck.length - 1]; 
-    game.table = [];
-    game.winner = null;
     game.playerHand = [];
     game.botHand = [];
-    
-    // Карта тарату
-    fillHands();
-    
-    // Кім бастайтынын анықтау (әзірге player)
+    game.table = [];
+    game.winner = null;
+
+    // 1-қадам: Алдымен қолға 6 картадан береміз
+    fillHands(); 
+
+    // 2-қадам: Егер колодада карта қалса, козырьді анықтаймыз
+    if (game.deck.length > 0) {
+        // Колоданың үстінен бір карта аламыз (уақытша)
+        let potentialTrump = game.deck.pop(); 
+        game.trumpCard = potentialTrump;
+        
+        // Оны колоданың ЕҢ АСТЫНА (басына) тығамыз
+        // pop() соңынан алатындықтан, unshift() басына қояды.
+        // Сонда бұл карта ең соңғы болып алынады.
+        game.deck.unshift(potentialTrump); 
+    } else {
+        // Егер карта жетпей қалса (өте сирек), соңғы карта козырь болады
+        game.trumpCard = game.botHand[game.botHand.length - 1];
+    }
+
+    // Кім бастайтынын анықтау (Козырь кімде кіші болса - сол бастайды)
+    // Әзірге қарапайым болу үшін player бастайды деп қоямыз
     game.attacker = 'player'; 
 }
 
-// 3. ЛОГИКА: Картаны жабуға бола ма?
-function canBeat(attackCard, defenseCard) {
-    if (!attackCard || !defenseCard) return false;
-    // Егер масть бірдей болса -> үлкені жеңеді
-    if (attackCard.suit === defenseCard.suit) return defenseCard.power > attackCard.power;
-    // Егер қорғанушы козырь болса -> жеңеді
-    if (defenseCard.suit === game.trumpCard.suit && attackCard.suit !== game.trumpCard.suit) return true;
-    return false;
-}
-
-// 4. ЛОГИКА: Подкидной (Үстелге тастауға бола ма?)
-function canToss(card) {
-    if (game.table.length === 0) return true; // Бірінші жүріс
-    // Үстелдегі барлық карталардың мәнін тексереміз
-    return game.table.some(item => item.card.value === card.value);
-}
-
-// 5. БОТТЫҢ ЖҮРІСІ
-function botTurn(socket) {
-    if (game.winner) return;
-
-    setTimeout(() => {
-        // A. ЕГЕР БОТ ҚОРҒАНСА (Адам шабуылдап тұр)
-        if (game.attacker === 'player') { 
-            // Соңғы картаны кім тастады?
-            let lastItem = game.table[game.table.length - 1];
-            
-            // Егер соңғы картаны адам тастаса -> Бот жабуы керек
-            if (lastItem && lastItem.owner === 'player') {
-                // Жаба алатын карталарды іздейміз
-                let candidates = game.botHand.filter(c => canBeat(lastItem.card, c));
-                // Үнемдеу үшін ең кішісін аламыз
-                candidates.sort((a,b) => a.power - b.power);
-
-                if (candidates.length > 0) {
-                    let card = candidates[0];
-                    game.botHand.splice(game.botHand.indexOf(card), 1);
-                    game.table.push({ card: card, owner: 'bot' });
-                    sendUpdate(socket);
-                } else {
-                    // Жаба алмаса -> Алады
-                    takeCards('bot', socket);
-                }
-            }
-        } 
-        // B. ЕГЕР БОТ ШАБУЫЛДАСА
-        else { 
-            // 1. Егер үстел бос болса -> Кез келген картамен жүреді
-            // 2. Егер үстелде карта болса (және жұп болса) -> Подкидной
-            
-            // Соңғы картаны бот жапты ма? (Демек кезек адамда ма?) 
-            // Жоқ, attacker='bot' болса, бот тастау керек.
-            
-            let cardToPlay = null;
-
-            if (game.table.length === 0) {
-                // Ең кішісімен бастайды
-                game.botHand.sort((a,b) => a.power - b.power);
-                cardToPlay = game.botHand[0];
-            } else {
-                // Подкидной іздейді
-                // Тек алдыңғы карта жабылған болса (яғни үстел саны жұп болса) ғана тастай алады
-                // Немесе біз жай ғана лақтыра береміз бе? Дурақта жауап күту керек.
-                
-                let lastItem = game.table[game.table.length - 1];
-                if (lastItem.owner === 'player') {
-                    // Адам жапты -> Бот үстелге ұқсас карта тастай алады
-                    let tossCandidates = game.botHand.filter(c => canToss(c));
-                    if(tossCandidates.length > 0) {
-                        tossCandidates.sort((a,b) => a.power - b.power);
-                        cardToPlay = tossCandidates[0];
-                    } else {
-                        // Тастайтын жоқ -> Бита
-                        endTurn(socket);
-                        return;
-                    }
-                }
-            }
-
-            if (cardToPlay) {
-                game.botHand.splice(game.botHand.indexOf(cardToPlay), 1);
-                game.table.push({ card: cardToPlay, owner: 'bot' });
-                sendUpdate(socket);
-            }
-        }
-    }, 1000);
-}
-
-// Карта алу функциясы
-function takeCards(who, socket) {
-    let cards = game.table.map(item => item.card);
-    game.table = []; // Үстелді тазалау
-
-    if (who === 'player') {
-        game.playerHand.push(...cards);
-        // Адам алса -> Бот келесі жүрісті жасайды (Attacker ауысады)
-        game.attacker = 'bot'; 
-    } else {
-        game.botHand.push(...cards);
-        // Бот алса -> Адам келесі жүрісті жасайды
-        game.attacker = 'player';
+// 3. Қолды толтыру
+function fillHands() {
+    // Ойыншыға 6 картаға дейін береміз
+    while (game.playerHand.length < 6 && game.deck.length > 0) {
+        game.playerHand.push(game.deck.pop()); // pop() соңынан (үстінен) алады
+    }
+    // Ботқа 6 картаға дейін береміз
+    while (game.botHand.length < 6 && game.deck.length > 0) {
+        game.botHand.push(game.deck.pop());
     }
     
-    fillHands();
-    sendUpdate(socket);
-    
-    // Егер кезек ботқа келсе, ол жүреді
-    if (game.attacker === 'bot') botTurn(socket);
+    checkWinner();
 }
 
-// Бита (Келесі раунд)
-function endTurn(socket) {
-    game.table = [];
-    fillHands();
-    // Кезек ауысады
-    game.attacker = (game.attacker === 'player') ? 'bot' : 'player';
-    sendUpdate(socket);
-    
-    if (game.attacker === 'bot') botTurn(socket);
-}
-
-function fillHands() {
-    while (game.playerHand.length < 6 && game.deck.length > 0) game.playerHand.push(game.deck.pop());
-    while (game.botHand.length < 6 && game.deck.length > 0) game.botHand.push(game.deck.pop());
-    
-    // Жеңісті тексеру
+// 4. Жеңісті тексеру
+function checkWinner() {
     if (game.deck.length === 0) {
         if (game.playerHand.length === 0) game.winner = 'player';
         else if (game.botHand.length === 0) game.winner = 'bot';
     }
 }
 
-// Клиентке (HTML-ге) жіберетін ақпарат
+// 5. Жабу логикасы
+function canBeat(attackCard, defenseCard) {
+    if (!attackCard || !defenseCard) return false;
+    // Егер қорғанушы козырь болса, ал шабуылдаушы емес болса
+    if (defenseCard.suit === game.trumpCard.suit && attackCard.suit !== game.trumpCard.suit) return true;
+    // Егер масть бірдей болса
+    if (attackCard.suit === defenseCard.suit) return defenseCard.power > attackCard.power;
+    return false;
+}
+
+// 6. Подкидной логикасы (Үстелде бар мәнді ғана тастау)
+function canToss(card) {
+    if (game.table.length === 0) return true; // Үстел бос болса кез келгенін тастауға болады
+    return game.table.some(item => item.card.value === card.value);
+}
+
+// 7. БОТТЫҢ ЖҮРІСІ
+function botTurn(socket) {
+    if (game.winner) return;
+
+    setTimeout(() => {
+        // A. БОТ ҚОРҒАНАДЫ (Attacker = Player)
+        if (game.attacker === 'player') { 
+            // Соңғы картаны кім тастады?
+            let lastItem = game.table[game.table.length - 1];
+            
+            // Егер соңғы карта адамдікі болса (шабуыл), бот жабу керек
+            if (lastItem && lastItem.owner === 'player') {
+                // Жаба алатын карталарды іздейміз
+                let candidates = game.botHand.filter(c => canBeat(lastItem.card, c));
+                // Үнемдеу үшін ең кішісін таңдаймыз
+                candidates.sort((a,b) => a.power - b.power);
+
+                if (candidates.length > 0) {
+                    // Жабады
+                    let card = candidates[0];
+                    game.botHand.splice(game.botHand.indexOf(card), 1);
+                    game.table.push({ card: card, owner: 'bot' });
+                    sendUpdate(socket);
+                    fillHands(); // Қолды толтыру (қажет болса)
+                } else {
+                    // Жаба алмаса -> Алады
+                    takeCards('bot', socket);
+                }
+            }
+        } 
+        // B. БОТ ШАБУЫЛДАЙДЫ (Attacker = Bot)
+        else { 
+            // Егер үстел бос болса
+            if (game.table.length === 0) {
+                // Ең кіші картамен жүреді
+                game.botHand.sort((a,b) => a.power - b.power);
+                let card = game.botHand[0];
+                game.botHand.splice(0, 1);
+                game.table.push({ card: card, owner: 'bot' });
+                sendUpdate(socket);
+            } 
+            else {
+                // Үстел бос емес, бот карта қоса ала ма? (Подкидной)
+                let lastItem = game.table[game.table.length - 1];
+                
+                // Егер соңғы картаны адам жапса (owner='player') -> Бот тағы қоса алады
+                if (lastItem.owner === 'player') {
+                    let tossCandidates = game.botHand.filter(c => canToss(c));
+                    if (tossCandidates.length > 0 && game.table.length < 12) {
+                        tossCandidates.sort((a,b) => a.power - b.power);
+                        let card = tossCandidates[0];
+                        game.botHand.splice(game.botHand.indexOf(card), 1);
+                        game.table.push({ card: card, owner: 'bot' });
+                        sendUpdate(socket);
+                    } else {
+                        // Қосатын карта жоқ -> Бита
+                        endTurn(socket);
+                    }
+                }
+            }
+        }
+    }, 1000);
+}
+
+// Карта алу
+function takeCards(who, socket) {
+    let cards = game.table.map(item => item.card);
+    game.table = [];
+
+    if (who === 'player') {
+        game.playerHand.push(...cards);
+        game.attacker = 'bot'; // Адам алса, келесіде бот шабуылдайды
+    } else {
+        game.botHand.push(...cards);
+        game.attacker = 'player'; // Бот алса, келесіде адам шабуылдайды
+    }
+    
+    fillHands();
+    sendUpdate(socket);
+    
+    // Егер ендігі кезек ботқа тисе, ол бірден жүруі керек
+    if (game.attacker === 'bot') botTurn(socket);
+}
+
+// Бита (Turn аяқталу)
+function endTurn(socket) {
+    game.table = []; // Карталар битаға кетеді (жойылады)
+    fillHands(); // Екі жақ та карта алады
+    
+    // Кезек ауысады
+    game.attacker = (game.attacker === 'player') ? 'bot' : 'player';
+    
+    sendUpdate(socket);
+    
+    // Егер кезек ботқа келсе
+    if (game.attacker === 'bot') botTurn(socket);
+}
+
 function sendUpdate(socket) {
+    checkWinner();
     socket.emit('updateState', {
         playerHand: game.playerHand,
         botCardCount: game.botHand.length,
-        table: game.table, // ДӘЛ СЕНІҢ HTML КҮТКЕНДЕЙ ARRAY ЖІБЕРЕМІЗ
+        table: game.table,
         trumpCard: game.trumpCard,
         deckCount: game.deck.length,
         attacker: game.attacker,
@@ -204,26 +219,27 @@ function sendUpdate(socket) {
 
 // --- SOCKET CONNECT ---
 io.on('connection', (socket) => {
-    // Егер ойын басталмаса, бастаймыз
-    if (game.deck.length === 0) startGame();
+    // Жаңа ойын бастау (егер басталмаған болса)
+    if (game.deck.length === 0 && !game.winner) startGame();
     
     sendUpdate(socket);
 
     // 1. Адам карта жүрді
     socket.on('playCard', (index) => {
-        // Егер ойын бітсе немесе бот шабуылдап жатса (және мен жабуым керек болмаса) тоқта
-        // Бірақ біз тексеруді төменде жасаймыз
+        if (game.winner) return;
         
+        // Индекстің дұрыстығын тексеру
+        if (index < 0 || index >= game.playerHand.length) return;
+
         let card = game.playerHand[index];
         let isValid = false;
 
         // A. МЕН ШАБУЫЛДАП ЖАТЫРМЫН
         if (game.attacker === 'player') {
-            // Егер үстел бос болса немесе Подкидной ережесі сәйкес келсе
-            if (canToss(card) && game.table.length < 12) {
-                // Тағы бір шарт: Егер үстелде карта бар болса, соңғысы БОТТЫКІ (жабылған) болуы керек
-                let lastItem = game.table[game.table.length - 1];
-                if (!lastItem || lastItem.owner === 'bot') {
+            // Егер үстел бос болса НЕМЕСЕ үстелдегі карталарға сәйкес келсе (Подкидной)
+            // ЖӘНЕ үстелдегі карта саны жұп болса (яғни бот жауып қойған кезде немесе басында)
+            if (game.table.length % 2 === 0) {
+                if (canToss(card) && game.table.length < 12) {
                     isValid = true;
                 }
             }
@@ -231,8 +247,9 @@ io.on('connection', (socket) => {
         // B. МЕН ҚОРҒАНЫП ЖАТЫРМЫН
         else {
             let lastItem = game.table[game.table.length - 1];
-            // Соңғы картаны БОТ тастаса, мен жабуым керек
+            // Соңғы картаны БОТ тастады ма?
             if (lastItem && lastItem.owner === 'bot') {
+                // Мен жаба аламын ба?
                 if (canBeat(lastItem.card, card)) {
                     isValid = true;
                 }
@@ -240,41 +257,41 @@ io.on('connection', (socket) => {
         }
 
         if (isValid) {
-            // Қолдан өшіру
+            // Картаны қолдан өшіру
             game.playerHand.splice(index, 1);
             // Үстелге қосу
             game.table.push({ card: card, owner: 'player' });
             
             sendUpdate(socket);
             
-            // Енді боттың кезегі (жауап беру немесе тастау)
+            // Енді бот ойланады
             botTurn(socket);
-                } else {
-            // Қате болса -> "invalidMove" деген сигнал жібереміз!
+        } else {
+            // Қате жүріс
             socket.emit('invalidMove');
         }
-
     });
 
-    // 2. Адам "АЛУ" батырмасын басты
+    // 2. "АЛУ" батырмасы
     socket.on('actionTake', () => {
-        // Тек бот шабуылдап жатқанда ғана ала аламын
+        // Тек мен қорғанып жатсам ғана ала аламын
         if (game.attacker === 'bot') {
             takeCards('player', socket);
         }
     });
 
-    // 3. Адам "БИТА" батырмасын басты
+    // 3. "БИТА" батырмасы
     socket.on('actionBita', () => {
-        // Тек мен шабуылдап жатқанда және үстелде карта бар болса
+        // Тек мен шабуылдап жатсам ЖӘНЕ үстелде карта болса (және бот жауып қойса)
         if (game.attacker === 'player' && game.table.length > 0) {
-            // Тек соңғы карта жабылған болса (жұп саны тең болса)
+            // Соңғы картаны бот жапқан болуы керек (table.length жұп)
             if (game.table.length % 2 === 0) {
                 endTurn(socket);
             }
         }
     });
 
+    // Қайта бастау
     socket.on('restart', () => {
         startGame();
         sendUpdate(socket);
