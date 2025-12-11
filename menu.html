@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Durak Menu</title>
+    <style>
+        /* --- НЕГІЗГІ ФОН (Ойынмен бірдей) --- */
+        body {
+            background: radial-gradient(circle at 50% 40%, #1b5e20 0%, #052207 100%);
+            color: white;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* --- ЛОГОТИП / ТАҚЫРЫП --- */
+        .logo-area {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .title {
+            font-size: 48px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            background: linear-gradient(to bottom, #ffd700, #ff8c00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));
+            margin: 0;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: #aaa;
+            margin-top: 5px;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+        }
+
+        /* --- ПРОФИЛЬ (Аватар) --- */
+        .profile-card {
+            display: flex;
+            align-items: center;
+            background: rgba(255,255,255,0.1);
+            padding: 10px 20px;
+            border-radius: 50px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(5px);
+            animation: fadeIn 1s ease-out;
+        }
+
+        .avatar {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            background: #ddd;
+            margin-right: 10px;
+            border: 2px solid gold;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 20px; color: #333;
+        }
+
+        .username { font-weight: bold; font-size: 16px; color: white; }
+        .balance { margin-left: 15px; color: #ffd700; font-weight: bold; }
+
+        /* --- МӘЗІР БАТЫРМАЛАРЫ --- */
+        .menu-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .menu-btn {
+            width: 80%;
+            max-width: 320px;
+            padding: 18px;
+            border: none;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: 800;
+            text-transform: uppercase;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            transition: transform 0.1s, filter 0.2s;
+            animation: fadeInUp 0.8s ease-out backwards;
+        }
+
+        .menu-btn:active { transform: scale(0.96); filter: brightness(0.9); }
+
+        /* Түстер */
+        .btn-play {
+            background: linear-gradient(to right, #43a047, #2e7d32);
+            color: white;
+            border: 2px solid #66bb6a;
+            animation-delay: 0.1s;
+        }
+
+        .btn-online {
+            background: linear-gradient(to right, #1e88e5, #1565c0);
+            color: white;
+            border: 2px solid #42a5f5;
+            animation-delay: 0.2s;
+        }
+
+        .btn-friends {
+            background: linear-gradient(to right, #fb8c00, #ef6c00);
+            color: white;
+            border: 2px solid #ffb74d;
+            animation-delay: 0.3s;
+        }
+
+        /* Астыңғы параметрлер */
+        .bottom-links {
+            margin-top: 40px;
+            display: flex;
+            gap: 20px;
+            animation: fadeIn 1.5s ease-out;
+        }
+        .icon-btn {
+            background: rgba(255,255,255,0.1);
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 20px; color: #ccc;
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* --- АНИМАЦИЯЛАР --- */
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="logo-area">
+        <h1 class="title">DURAK</h1>
+        <div class="subtitle">PREMIUM ONLINE</div>
+    </div>
+
+    <div class="profile-card">
+        <div class="avatar">👤</div>
+        <div class="username">Player 1</div>
+        <div class="balance">💰 5000</div>
+    </div>
+
+    <div class="menu-container">
+        
+        <button class="menu-btn btn-play" onclick="startGame()">
+            БОТПЕН ОЙНАУ
+        </button>
+
+        <button class="menu-btn btn-online" onclick="showSoon()">
+            ОНЛАЙН ОЙНАУ
+        </button>
+
+        <button class="menu-btn btn-friends" onclick="showSoon()">
+            ДОСПЕН ОЙНАУ
+        </button>
+
+    </div>
+
+    <div class="bottom-links">
+        <div class="icon-btn">⚙️</div> <div class="icon-btn">🏆</div> <div class="icon-btn">🎁</div> </div>
+
+    <script>
+        // Ойынды бастау (index.html файлын ашады)
+        function startGame() {
+            // Анимациямен өту үшін кішкене кідіріс
+            document.body.style.opacity = '0';
+            document.body.style.transition = 'opacity 0.3s';
+            
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 300);
+        }
+
+        // Әзірленуде деген хабарлама
+        function showSoon() {
+            alert("Бұл бөлім әзірленуде! Жақында қосылады.");
+        }
+    </script>
+
+</body>
+</html>
