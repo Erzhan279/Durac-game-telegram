@@ -6,16 +6,26 @@ const path = require('path');
 
 const app = express();
 app.use(cors());
-app.use(express.static(path.join(__dirname, 'public')));
+
+// Статикалық файлдарды (сурет, css, js) ашуға рұқсат
+app.use(express.static(__dirname)); 
 
 const server = http.createServer(app);
 
-// Ойын файлын ашу
+// 1. БАСТЫ БЕТ (Мәзір) - index.html ашылады
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// 2. ОЙЫН БЕТІ - game.html ашылады
 app.get('/game.html', (req, res) => {
-  res.sendFile(__dirname + '/game.html');
+  res.sendFile(path.join(__dirname, 'game.html'));
 });
 
 const io = new Server(server, { cors: { origin: "*" } });
+
+// ... (Ары қарай сенің ойын логикаң: const suits = ... деп жалғаса береді)
+
 
 // --- ОЙЫН ДЕРЕКТЕРІ ---
 const suits = ['♥', '♦', '♣', '♠'];
