@@ -73,6 +73,28 @@
             font-size: 15px; font-weight: 800; 
             color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.6); 
         }
+                /* ІЗДЕУ ЭКРАНЫ (SPINNER) */
+        #search-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 6000;
+            display: none; /* JS ашады */
+            flex-direction: column; justify-content: center; align-items: center;
+        }
+        .spinner {
+            width: 60px; height: 60px;
+            border: 6px solid rgba(255, 215, 0, 0.2);
+            border-top: 6px solid gold;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        .search-text { color: white; font-size: 20px; font-weight: bold; letter-spacing: 1px; }
+        .btn-cancel-search {
+            margin-top: 30px; padding: 10px 30px; background: #333; color: #fff;
+            border: 1px solid #555; border-radius: 20px; cursor: pointer;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
 
         /* --- 🔥 GAME OVER ЭКРАНЫ (ЖЕҢІС/ЖЕҢІЛІС) --- */
         #game-over-screen {
