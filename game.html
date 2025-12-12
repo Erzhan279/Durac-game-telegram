@@ -261,13 +261,36 @@
     </div>
 
     <script>
-        const socket = io();
+                const socket = io();
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // 1. АВТОРИЗАЦИЯ ЖӘНЕ АВАТАР
+        // URL параметрді оқу
+        const urlParams = new URLSearchParams(window.location.search);
+        const gameMode = urlParams.get('mode') || 'bot';
+        
+        const searchOverlay = document.getElementById('search-overlay');
+
+        // Авторизация
         const user = tg.initDataUnsafe.user;
-        const userData = user ? { id: user.id, first_name: user.first_name, photo_url: user.photo_url } : null;
+        const userData = user ? { id: user.id, first_name: user.first_name } : null;
+        socket.emit('login', userData);
+
+        // --- ОЙЫНДЫ БАСТАУ ЛОГИКАСЫ ---
+        if (gameMode === 'online') {
+            // Онлайн -> Іздеу экранын ашамыз
+            searchOverlay.style.display = 'flex';
+            socket.emit('findGame'); // Кезекке тұру
+        } else {
+            // Бот -> Бірден бастаймыз
+            socket.emit('startBotGame');
+        }
+
+        // Қарсылас табылды! (Серверден сигнал)
+        socket.on('gameStarted', () => {
+            searchOverlay.style.display = 'none'; // Іздеуді жабамыз, ойынды көрсетеміз
+        });
+
         
         // Профильді орнату
         const uiUsername = document.getElementById('ui-username');
